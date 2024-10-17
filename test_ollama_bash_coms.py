@@ -13,7 +13,7 @@ def message_ollama(prompt, model='llama3.2'):
         else:
             result = resultado.stdout
             total_time = round(time() - start_time,1)
-            result_str = f'{model} - {total_time}s:\n{result}'
+            result_str = f'-----------> {model} - {total_time}s <----------\n{result}'
             print(result_str)
     except Exception as e:
         print(f"Ocorreu um erro inesperado: {e}")
