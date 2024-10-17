@@ -13,7 +13,7 @@ def message_ollama(prompt, model='llama3.2'):
         else:
             result = resultado.stdout
             total_time = round(time() - start_time,1)
-            result_str = f'-----------> {model} - {total_time}s <----------\n{result}'
+            result_str = f'========================================\n{model} - {total_time}s\n========================================\n{result}'
             print(result_str)
     except Exception as e:
         print(f"Ocorreu um erro inesperado: {e}")
@@ -27,8 +27,11 @@ def main():
         'stablelm2:12b',
         ]
     
-    start_prompt = 'A seguir, te mando uma série de comentários de uma pesquisa organizaional, um a cada linha, e gostaria que você fizesse um resumo destes comentários:'
-    end_prompt = 'Com base nestes comentários, faça um resumo, em português do Brasil, que contenha 2 parágrafos: o primeiro parágrafo resumindo os pontos positivos, e o segundo contendo os pontos negativos. Fique atento ao que foi escrito, utilize apenas isso como base, não adicione novas informações.'
+    main_prompt = 'Você é um especialista em pesquisas organizacionais e possui ótimas habilidades em interpretar estas pesquisas.\
+    Sua especialidade é resumir seus comentários em relação aos tópicos mais importantes, gerando valiosos insights que ajudam o time de Pessoas / Recursos Humanos a identificar pontos positivos e negativos em relação à percepção dos colaboradores.\
+    Seu objetivo é identificar os três assuntos mais comentados na pesquisa, gerando um resumo executivo que utiliza exclusivamente os dados da pesquisa e nunca utiliza informações externas.'
+    start_prompt = main_prompt+' Faça um resumo executivo da pesquisa organizacional da Amazon a partir dos comentários a seguir:'
+    end_prompt = 'Com base nestes comentários, faça um resumo executivo da pesquisa organizacional da Amazon. Lembre-se de que: '+main_prompt
 
     df = pd.read_csv('Amazon_Reviews.csv', usecols=['Likes','Dislikes'])
     likes = df['Likes'].tolist()
@@ -45,7 +48,7 @@ def main():
     for n in range(n_comments):
         prompt = prompt+'\n'+comments[n]
     prompt = prompt + end_prompt
-    out_txt = f'{start_prompt}\n[{n_comments} comentários]\n{end_prompt}\nTamanho do prompt: {len(prompt)}\n'
+    out_txt = f'-----> PROMPT:\n\n{start_prompt}\n\n-----> [{n_comments} comentários]\n\n{end_prompt}\nTamanho do prompt: {len(prompt)}\n\n--------------------------------------------------------------------------------\n'
     print(out_txt)
 
     for model in models:
