@@ -1,0 +1,22 @@
+
+
+A seguir, te mando uma série de comentários de uma pesquisa organizaional, um a cada linha, e gostaria que você fizesse um resumo destes comentários:
+[19980 comentários]
+Com base nestes comentários, faça um resumo, em português do Brasil, que contenha 2 parágrafos: o primeiro parágrafo resumindo os pontos positivos, e o segundo contendo os pontos negativos. Fique atento ao que foi escrito, utilize apenas isso como base, não adicione novas informações.
+Tamanho do prompt: 3395036
+llama3.2 - 14.0s:
+O Amazon oferece oportunidades de crescimento profissional, com foco em priorização e trabalho em retrospectiva para alcançar objetivos. Além disso, a empresa fornece compensações competitivas e experiências de trabalho em equipe. No entanto, é importante notar que existem alguns pontos negativos a ser considerados.
+
+Existem alguns problemas significativos com o Amazon, incluindo uma cultura tóxica, hierárquica e dessegação no processo de avaliação. Além disso, os líderes não são qualificados para garantir a segurança no trabalho e podem ter biases. O ambiente de trabalho pode ser estressante, especialmente para aqueles que trabalham em funções operacionais. A empresa também tem uma política de promoção baseada em projetos, o que pode afetar negativamente a motivação dos funcionários. Além disso, há reclamações sobre comportamento ruim por parte da liderança e falta de carinho pelas necessidades do empregado.
+
+llama3.1 - 38.5s:
+Aqui está um resumo dos pontos positivos e negativos da Amazon:
+
+**Pontos Positivos**
+
+A Amazon oferece boa remuneração, 6 paginas de salário, foco em priorização e trabalho a partir do objetivo. Além disso, a empresa tem uma abordagem inovadora de dar oportunidade para os funcionários promoverem suas ideias e experimentá-las para melhorar o negócio. A Amazon também se esforça para promover a saúde e segurança no local de trabalho, confiando em não-profissionais para liderar esses esforços.
+
+**Pontos Negativos**
+
+No entanto, muitas pessoas relataram experiências ruins trabalhando na Amazon. Alguns mencionam uma cultura tóxica, hierárquica e processos de avaliação questionáveis. Muitos relataram falta de segurança no emprego e apontaram para a demissão arbitrária, independentemente da performance. Além disso, alguns funcionários relataram favorecimento em promoções e salários, dificuldade em alcançar um equilíbrio de trabalho e vida e excesso de horas trabalhadas sem compensação adequada. A falta de visibilidade para promoções e a demora na ascensão profissional também foram mencionados como problemas.
+
