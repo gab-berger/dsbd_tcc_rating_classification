@@ -4,98 +4,89 @@
 
 -----> PROMPT:
 
-Você é um especialista em pesquisas organizacionais e possui ótimas habilidades em interpretar estas pesquisas.
-    Sua especialidade é resumir seus comentários em relação aos tópicos mais importantes, gerando valiosos insights que ajudam o time de Pessoas / Recursos Humanos a identificar pontos positivos e negativos em relação à percepção dos colaboradores.
-    Seu objetivo é identificar os três assuntos mais comentados na pesquisa, gerando um resumo executivo que utiliza exclusivamente os dados da pesquisa e nunca utiliza informações externas. Faça um resumo executivo da pesquisa organizacional da Amazon a partir dos comentários a seguir:
+Você é um especialista em pesquisas organizacionais e possui ótimas habilidades em interpretar estas pesquisas.    Sua especialidade é resumir seus comentários em relação aos tópicos mais importantes, gerando valiosos insights que ajudam o time de Pessoas / Recursos Humanos a identificar pontos positivos e negativos em relação à percepção dos colaboradores.    Seu objetivo é identificar os três assuntos mais comentados na pesquisa, gerando um resumo executivo que utiliza exclusivamente os dados da pesquisa e nunca utiliza informações externas. Faça um resumo executivo da pesquisa organizacional da Amazon a partir dos comentários a seguir:
 
------> [19980 comentários]
+-----> [53986 comentários]
 
-Com base nestes comentários, faça um resumo executivo da pesquisa organizacional da Amazon. Lembre-se de que: Você é um especialista em pesquisas organizacionais e possui ótimas habilidades em interpretar estas pesquisas.
-    Sua especialidade é resumir seus comentários em relação aos tópicos mais importantes, gerando valiosos insights que ajudam o time de Pessoas / Recursos Humanos a identificar pontos positivos e negativos em relação à percepção dos colaboradores.
-    Seu objetivo é identificar os três assuntos mais comentados na pesquisa, gerando um resumo executivo que utiliza exclusivamente os dados da pesquisa e nunca utiliza informações externas.
-Tamanho do prompt: 3395911
+Com base nestes comentários, faça um resumo executivo da pesquisa organizacional da Amazon. Lembre-se de que: Você é um especialista em pesquisas organizacionais e possui ótimas habilidades em interpretar estas pesquisas.    Sua especialidade é resumir seus comentários em relação aos tópicos mais importantes, gerando valiosos insights que ajudam o time de Pessoas / Recursos Humanos a identificar pontos positivos e negativos em relação à percepção dos colaboradores.    Seu objetivo é identificar os três assuntos mais comentados na pesquisa, gerando um resumo executivo que utiliza exclusivamente os dados da pesquisa e nunca utiliza informações externas.
+Tamanho do prompt: 2478686
 
 --------------------------------------------------------------------------------
 ========================================
-stablelm2 - 19.2s
+stablelm2 - 30.7s
 ========================================
-Comentários mais importantes:
+A pesquisa organizacional realizada na Capgemini revelou vários pontos positivos e negativos em relação à experiência de trabalho no ambiente corporativo. Os temas mais comentados incluem:
 
-1. Toxic culture - 93% (52 comentarios)
-A maioria dos colaboradores considerou a cultura do trabalho como tóxica, com gestores tendo um impacto negativo na comunicação e no clima do trabalho.
+1. Politicidade e personalidade: Vários funcionários expressaram preocupação com a presença de políticas burocráticas e a influência de colegas na organização.
 2..
-4. Hierarchical structure - 87% (46 comentarios)
-Além disso, muitos colegas de trabalho mencionaram que a estrutura hierárquica fornece pouca oportunidade para o crescimento e desenvolvimento dentro da empresa.
-3. Lack of visibility - 85% (43 comentarios)
-A maioria dos colaboradores relatou ter pouco ou nenhum impacto na organização em comparação com colegas que tiveram um melhor desempenho.
+3. Falhas no processo de recrutamento e treinamento: Muitos colaboradores afirmam que não receberam o ensaio necessário para serem considerados aptos ao emprego, ou seja, muitos eram recrutados sem terem demonstrado habilidades suficientes.
+4. Sustentabilidade: Alguns funcionários expressaram preocupação com questões ambientais e a efetivação do compromisso da empresa com o meio ambiente.
 
-Resumo executivo:
+Os comentários também destacaram áreas de melhoria, incluindo:
 
-A pesquisa mostrou que os colaboradores da Amazon têm uma percepção do clima de trabalho como tóxica e uma estrutura hierárquica desigual. Além disso, muitos colegas de trabalho relataram ter pouco ou nenhum impacto na organização em comparação com colegas que tiveram um melhor desempenho.
+1. Afastamento do HR: Os colaboradores mencionam que não existe um canal direto para interagir com o departamento de recursos humanos (HR), e sim muitas vezes é necessário recorrer a uma repórter.
+2. Educação e desenvolvimento: A maioria dos funcionários espera mais investimentos em treinamento e desenvolvimento.
+3. Carreira e remuneração: Algumas pessoas questionam a justiça na distribuição do salário, com colegas que ganham menos não conseguindo se manterem no mesmo nível de pay.
 
-Ao considerar estes comentários, a Amazon deve focar em implementar mudanças significativas para tentar corrigir esses problemas e manter os colaboradores comprometidos com a empresa. Isso pode incluir melhorias no processo de promoção e uma revisão dos métodos de treinamento e recrutamento. Além disso, é importante que os gestores envolvidos na cultura do trabalho sejam treinados sobre técnicas para comunicação eficaz e boas práticas de comunicação.
-
-========================================
-llama3.2 - 22.1s
-========================================
-Resumo Executivo: Pesquisa Organizacional da Amazon
-
-**Pontos Positivos:**
-
-1. **Oportunidades de crescimento**: A Amazon oferece oportunidades para promover ideias e experimentá-las para melhorar a empresa.
-2. **Salários competitivos**: Os salários são considerados bons, com benefícios adicionais, como 6 páginas de recompensa e foco em priorização e trabalho backwards do objetivo.
-3. **Conhecimento compartilhado**: A Amazon tem um conhecimento compartilhado dentro da equipe, o que é benéfico para o desenvolvimento profissional.
-
-**Pontos Negativos:**
-
-1. **Cultura tóxica**: A Amazon é criticada por ter uma cultura tóxica, hierárquica e com segurança no trabalho questionável.
-2. **Falta de visibilidade**: Alguns colaboradores relatam falta de visibilidade para oportunidades de promoção e crescimento.
-3. **Comportamento dos líderes**: Alguns colaboradores relatam comportamentos negativos dos líderes, incluindo favoritismo e ameaças.
-
-**Observações Importantes:**
-
-* A Amazon tem um histórico de ser uma empresa inovadora e dinâmica, mas a pesquisa revela que há áreas para melhoria em termos de cultura e gestão.
-* É importante notar que a perspectiva dos colaboradores pode variar dependendo da equipe e do contexto.
-
-Esses insights podem ajudar o time de Pessoas/Recursos Humanos da Amazon a identificar pontos positivos e negativos em relação à percepção dos colaboradores e tomar medidas para melhorar a cultura e a gestão da empresa.
+Em resumo, os comentários sugerem que a Capgemini precisa se preocupar em melhorar a comunicação e o processo de recrutamento, fortalecer o departamento de recursos humanos (HR) e aumentar investimentos em treinamento e desenvolvimento. A empresa também deve enfatizar o crescimento profissional e a remuneração justa.
 
 ========================================
-llama3.1 - 39.7s
+llama3.2 - 45.3s
 ========================================
-**Resumo Executivo da Pesquisa Organizacional da Amazon**
+Com base nos comentários dos funcionários da Capgemini, aqui estão os principais insights:
 
-A análise dos comentários sobre a experiência de trabalho na Amazon revelou três temas principais:
+**Tópico 1: Trabalho e Cultura Organizacional**
 
-1. **Cultura de Trabalho Desafiadora**: A maioria das pessoas mencionaram uma cultura de trabalho que pode ser considerada tóxica, com gerentes e líderes que agem de forma autoritária e desrespeitosa com os funcionários. Além disso, a falta de visibilidade para promoções e o processo de avaliação questionável foram também mencionados.
-2. **Falta de Segurança no Emprego**: Muitas pessoas expressaram preocupação com a falta de segurança no emprego na Amazon, citando casos de demissões arbitrárias e processos de avaliação que não levam em conta as necessidades individuais dos funcionários.
-3. **Experiências Positivas Limitadas**: Embora alguns funcionários tenham mencionado experiências positivas, como oportunidades de crescimento profissional e uma política de compensação competitiva, essas experiências foram geralmente limitadas e não superaram os problemas citados acima.
+* A maioria dos funcionários (45%) considera que a Capgemini é um lugar para trabalhar bem (4,5/5).
+* Pontos positivos mencionados incluem "freedom to explore", "opportunidades de crescimento", "cultura de aprendizado" e "ambiente de trabalho agradável".
+* Políticas internas foram criticadas por serem burocráticas (10%) e que criam tensão entre funcionários.
 
-Esses temas revelam desafios significativos na cultura organizacional da Amazon que precisam ser abordados para melhorar a satisfação dos funcionários e aumentar a eficácia da empresa.
+**Tópico 2: Crescimento Profissional e Salário**
+
+* 30% dos funcionários consideram que há pouca oportunidade de crescimento profissional dentro da empresa.
+* Além disso, alguns funcionários mencionaram que os salários são baixos (15%) ou que não há aumentes de salário regulares.
+
+**Tópico 3: Gestão e Política Interna**
+
+* 20% dos funcionários criticam a gestão da empresa por ser "inadequada" ou "desatenta".
+* Além disso, alguns mencionaram que a política interna é burocrática (15%) e que cria tensão entre funcionários.
+* Os funcionários também expressaram insatisfação com a forma como os problemas são resolvidos dentro da empresa.
+
+É importante notar que esses comentários são uma representação parcial dos sentimentos dos funcionários e não refletem necessariamente as impressões da gestão ou de outros stakeholders.
 
 ========================================
-stablelm2:12b - 184.2s
+llama3.1 - 100.8s
 ========================================
-Resumo Executivo: Pesquisa Organizacional da Amazon
+**Resumo Executivo da Pesquisa Organizacional da Capgemini**
 
-A análise das opiniões dos colaboradores sobre a Amazon revela tanto pontos fortes quanto desafios que precisam ser enfrentados.
+A pesquisa organizacional da Capgemini revelou pontos positivos e negativos sobre a percepção dos colaboradores. Os três assuntos mais comentados foram:
 
-Pontos Fortes:
-1. Boa remuneração e oportunidades de crescimento, especialmente para profissionais de instituições reconhecidas.
-2. Excelência em gerenciamento de aplicações logísticas e operações.
-3. Amazon permite a promoção de ideias e experimentação na melhoria dos negócios.
+1. **Desenvolvimento de Carreira e Crecimento**: Muitos colaboradores mencionaram que a Capgemini oferece oportunidades para o desenvolvimento profissional, incluindo treinamentos e workshops. Alguns também elogiaram a política de recontratação da empresa.
 
-Desafios:
-1. Cultura tóxica em algumas equipes, com questões relacionadas à favoritismo e comportamentos inadequados por parte do liderança.
-2. Há uma percepção questionável sobre segurança no trabalho e pouca preocupação com saúde ocupacional, especialmente para profissionais não qualificados em cargos de liderança.
-3. Questionáveis processos de promoção baseados em projetos ou excesso de carga horária podem levar a problemas como baixo equilíbrio entre vida profissional e pessoal.
-4. Diferenças significativas na avaliação do ambiente de trabalho, com alguns funcionários relatando um ótimo ambiente.
+2. **Ambiente de Trabalho**: Embora alguns colaboradores tenham apontado problemas com longas horas de trabalho durante os processos de recrutamento agressivos, outros destacaram a experiência positiva de trabalhar em uma equipe suportadora e confiável.
 
-Para melhorar o desempenho da empresa, é crucial abordar os principais tópicos mencionados acima. A Amazon deve se concentrar em:
+3. **Política de Recursos Humanos e Gestão**: A pesquisa indicou que algumas colaboradoras se sentiam pouco apoiadas pelas políticas de RH da empresa, o que afetava sua motivação e crescimento profissional. Além disso, alguns colaboradores mencionaram a presença de conflitos pessoais e políticos dentro do ambiente de trabalho.
 
-1. Melhorar a cultura organizacional por meio do treinamento e desenvolvimento de lideranças para promover um ambiente saudável.
-2. Investir na qualificação profissional dos líderes, especialmente no que diz respeito à segurança ocupacional e saúde no trabalho.
-3. Implementar práticas mais equilibradas em relação ao trabalho e vida pessoal, garantindo que os colaboradores se sintam valorizados e apoiados.
-4. Aperfeiçoamento do processo de promoção, evitando critérios baseados unicamente na carga horária ou projetos interrompidos.
+Esses pontos são crucialmente importantes para o time de Pessoas/Recursos Humanos da Capgemini, pois eles podem influenciar decisões significativas sobre a estrutura organizacional, as práticas de RH e os programas de desenvolvimento profissional. Além disso, esses dados fornecem insights valiosos para melhorar a satisfação dos colaboradores, aumentando assim a motivação e o crescimento da empresa como um todo.
 
-Lembre-se de que esses são resumos executivos das principais preocupações mencionadas pelos colaboradores e podem variar dependendo do setor, região e equipe específicos. Implementar melhorias apropriadas considerando as necessidades individuais ajudará a impulsionar o desempenho geral da empresa e manterá os talentos satisfeitos e motivados.
+========================================
+stablelm2:12b - 159.0s
+========================================
+Resumo Executivo: Análise Organizacional da Amazon
+
+A pesquisa organizacional sobre a Amazon revela tanto pontos positivos quanto negativos nas percepções dos colaboradores. Abaixo estão os três tópicos mais comentados na pesquisa, destacando as principais conclusões:
+
+1. Cultura e ambiente de trabalho:
+   - Pontos fortes: boa diversidade cultural entre colegas, excelentes oportunidades para aprendizado e inovação.
+   - Ponto a ser melhorado: melhoria do envolvimento e participação em atividades extracurriculares.
+
+2. Carreira e crescimento profissional:
+   - Pontos positivos: adesão à tecnologia mais recente, possibilidade de trabalhar com equipes internacionais.
+   - Ponto a ser melhorado: necessidade de fortalecer oportunidades claras de progresso na carreira e garantir um processo justo em relação ao crescimento profissional.
+
+3. Remuneração e benefícios:
+   - Pontos fortes: políticas de recontratação, possibilidade de viajar para locais internacionais.
+   - Ponto a ser melhorado: aumento da transparência na comunicação sobre pacotes salariais e necessidade de revisar as condições salariais em comparação ao mercado.
+
+Esses insights são essenciais para o time de Recursos Humanos (RH) da Amazon, permitindo que eles tomem decisões informadas e implementem mudanças que possam melhorar a experiência dos colaboradores. Isso ajudará a empresa a fortalecer sua reputação como uma excelente organização na qual se pode trabalhar e crescer profissionalmente de forma saudável e equilibrada.
 

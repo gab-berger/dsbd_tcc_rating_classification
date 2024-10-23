@@ -33,7 +33,8 @@ def main():
     start_prompt = main_prompt+' Faça um resumo executivo da pesquisa organizacional da Amazon a partir dos comentários a seguir:'
     end_prompt = 'Com base nestes comentários, faça um resumo executivo da pesquisa organizacional da Amazon. Lembre-se de que: '+main_prompt
 
-    df = pd.read_csv('Amazon_Reviews.csv', usecols=['Likes','Dislikes'])
+    # you can get Capgemini_Employee_Reviews_from_AmbitionBox.csv from https://www.kaggle.com/datasets/manishkr1754/capgemini-employee-reviews-dataset
+    df = pd.read_csv('Capgemini_Employee_Reviews_from_AmbitionBox.csv', usecols=['Likes','Dislikes'])
     likes = df['Likes'].tolist()
     dislikes = df['Dislikes'].tolist()
     n_surveys = len(likes)
@@ -46,7 +47,7 @@ def main():
 
     prompt = start_prompt
     for n in range(n_comments):
-        prompt = prompt+'\n'+comments[n]
+        prompt = prompt+'\n'+str(comments[n])
     prompt = prompt + end_prompt
     out_txt = f'-----> PROMPT:\n\n{start_prompt}\n\n-----> [{n_comments} comentários]\n\n{end_prompt}\nTamanho do prompt: {len(prompt)}\n\n--------------------------------------------------------------------------------\n'
     print(out_txt)
