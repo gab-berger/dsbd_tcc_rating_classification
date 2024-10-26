@@ -1,16 +1,36 @@
 import pandas as pd
+import random
 import subprocess
 from time import time
 
-def download_dataset():
-    download_url = 'https://www.kaggle.com/api/v1/datasets/download/manishkr1754/capgemini-employee-reviews-dataset'
-    commands = [
-        ['curl','-L','-o','download.zip',download_url],
-        ['unzip','-o','download.zip'],
-        ['rm','-f','download.zip']
-    ]
-    for command in commands:
-        subprocess.run(command)
+def generate_comments_list(comment_columns:list) -> list:
+    def download_dataset():
+        download_url = 'https://www.kaggle.com/api/v1/datasets/download/manishkr1754/capgemini-employee-reviews-dataset'
+        commands = [
+            ['curl','-L','-o','download.zip',download_url],
+            ['unzip','-o','download.zip'],
+            ['rm','-f','download.zip']
+        ]
+        for command in commands:
+            subprocess.run(command)
+    
+    csv_file = 'Capgemini_Employee_Reviews_from_AmbitionBox.csv'
+    try:
+        df = pd.read_csv(csv_file, usecols=comment_columns)
+    except:
+        download_dataset() 
+        df = pd.read_csv(csv_file, usecols=comment_columns)
+    
+    comments = []
+    for column in comment_columns:
+        comments_column = df[df[column].notna() & (df[column] != '')][column].tolist()
+        for comment in range(len(comments_column)):
+            comments.append(comments_column[comment])
+
+    random.seed(42)
+    random.shuffle(comments)
+
+    return comments
 
 def message_ollama(prompt, model='llama3.2'):
     command = ['ollama', 'run', model]
@@ -23,35 +43,21 @@ def message_ollama(prompt, model='llama3.2'):
         else:
             result = resultado.stdout
             total_time = round(time() - start_time,1)
-            result_str = f'========================================\n{model} - {total_time}s\n========================================\n{result}'
+            result_str = f"{'=' * 40}\n{model} - {total_time}s\n{'=' * 40}\n{result}"
             print(result_str)
     except Exception as e:
         print(f"Ocorreu um erro inesperado: {e}")
     return result_str
 
 def main(models:list, start_prompt:str, end_prompt:str)->str: 
-    
-    try:
-        df = pd.read_csv('Capgemini_Employee_Reviews_from_AmbitionBox.csv', usecols=['Likes','Dislikes'])
-    except:
-        download_dataset() 
-        df = pd.read_csv('Capgemini_Employee_Reviews_from_AmbitionBox.csv', usecols=['Likes','Dislikes'])
-    
-    likes = df['Likes'].tolist()
-    dislikes = df['Dislikes'].tolist()
-    n_surveys = len(likes)
-
-    comments = []
-    for n in range(n_surveys):
-        comments.append(likes[n])
-        comments.append(dislikes[n])
-    n_comments = len(comments)
+    comments = generate_comments_list(['Likes','Dislikes'])
+    comments_n = len(comments)
 
     prompt = start_prompt
-    for n in range(n_comments):
+    for n in range(comments_n):
         prompt = prompt+'\n'+str(comments[n])
     prompt = prompt + end_prompt
-    out_txt = f'-----> PROMPT:\n\n{start_prompt}\n\n-----> [{n_comments} comentários]\n\n{end_prompt}\nTamanho do prompt: {len(prompt)}\n\n--------------------------------------------------------------------------------\n'
+    out_txt = f"-----> PROMPT:\n\n{start_prompt}\n\n-----> [{comments_n} comentários]\n\n{end_prompt}\nTamanho do prompt: {len(prompt)}\n\n{'-' * 40}\n"
     print(out_txt)
 
     for model in models:
