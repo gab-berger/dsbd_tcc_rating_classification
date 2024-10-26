@@ -2,6 +2,16 @@ import pandas as pd
 import subprocess
 from time import time
 
+def download_dataset():
+    download_url = 'https://www.kaggle.com/api/v1/datasets/download/manishkr1754/capgemini-employee-reviews-dataset'
+    commands = [
+        ['curl','-L','-o','download.zip',download_url],
+        ['unzip','-o','download.zip'],
+        ['rm','-f','download.zip']
+    ]
+    for command in commands:
+        subprocess.run(command)
+
 def message_ollama(prompt, model='llama3.2'):
     command = ['ollama', 'run', model]
     start_time = time()
@@ -19,22 +29,14 @@ def message_ollama(prompt, model='llama3.2'):
         print(f"Ocorreu um erro inesperado: {e}")
     return result_str
 
-def main(): 
-    models = [
-        'stablelm2',
-        'llama3.2',
-        'llama3.1',
-        'stablelm2:12b',
-        ]
+def main(models:list, start_prompt:str, end_prompt:str)->str: 
     
-    main_prompt = 'Você é um especialista em pesquisas organizacionais e possui ótimas habilidades em interpretar estas pesquisas.\
-    Sua especialidade é resumir seus comentários em relação aos tópicos mais importantes, gerando valiosos insights que ajudam o time de Pessoas / Recursos Humanos a identificar pontos positivos e negativos em relação à percepção dos colaboradores.\
-    Seu objetivo é identificar os três assuntos mais comentados na pesquisa, gerando um resumo executivo que utiliza exclusivamente os dados da pesquisa e nunca utiliza informações externas.'
-    start_prompt = main_prompt+' Faça um resumo executivo da pesquisa organizacional da Amazon a partir dos comentários a seguir:'
-    end_prompt = 'Com base nestes comentários, faça um resumo executivo da pesquisa organizacional da Amazon. Lembre-se de que: '+main_prompt
-
-    # you can get Capgemini_Employee_Reviews_from_AmbitionBox.csv from https://www.kaggle.com/datasets/manishkr1754/capgemini-employee-reviews-dataset
-    df = pd.read_csv('Capgemini_Employee_Reviews_from_AmbitionBox.csv', usecols=['Likes','Dislikes'])
+    try:
+        df = pd.read_csv('Capgemini_Employee_Reviews_from_AmbitionBox.csv', usecols=['Likes','Dislikes'])
+    except:
+        download_dataset() 
+        df = pd.read_csv('Capgemini_Employee_Reviews_from_AmbitionBox.csv', usecols=['Likes','Dislikes'])
+    
     likes = df['Likes'].tolist()
     dislikes = df['Dislikes'].tolist()
     n_surveys = len(likes)
@@ -61,4 +63,17 @@ def main():
         txt_file.write(out_txt)
 
 if __name__ == '__main__':
-    main()
+    models = [
+    'stablelm2',
+    'llama3.2',
+    'llama3.1',
+    'stablelm2:12b',
+    ]
+    
+    main_prompt = 'Você é um especialista em pesquisas organizacionais e possui ótimas habilidades em interpretar estas pesquisas.\
+    Sua especialidade é resumir seus comentários em relação aos tópicos mais importantes, gerando valiosos insights que ajudam o time de Pessoas / Recursos Humanos a identificar pontos positivos e negativos em relação à percepção dos colaboradores.\
+    Seu objetivo é identificar os três assuntos mais comentados na pesquisa, gerando um resumo executivo que utiliza exclusivamente os dados da pesquisa e nunca utiliza informações externas.'
+    start_prompt = main_prompt+' Faça um resumo executivo da pesquisa organizacional da Amazon a partir dos comentários a seguir:'
+    end_prompt = 'Com base nestes comentários, faça um resumo executivo da pesquisa organizacional da Amazon. Lembre-se de que: '+main_prompt
+
+    main(models, start_prompt, end_prompt)
