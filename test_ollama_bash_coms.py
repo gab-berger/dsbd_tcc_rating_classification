@@ -4,22 +4,8 @@ import subprocess
 from time import time
 
 def generate_comments_list(comment_columns:list) -> list:
-    def download_dataset():
-        download_url = 'https://www.kaggle.com/api/v1/datasets/download/manishkr1754/capgemini-employee-reviews-dataset'
-        commands = [
-            ['curl','-L','-o','download.zip',download_url],
-            ['unzip','-o','download.zip'],
-            ['rm','-f','download.zip']
-        ]
-        for command in commands:
-            subprocess.run(command)
-    
     csv_file = 'Capgemini_Employee_Reviews_from_AmbitionBox.csv'
-    try:
-        df = pd.read_csv(csv_file, usecols=comment_columns)
-    except:
-        download_dataset() 
-        df = pd.read_csv(csv_file, usecols=comment_columns)
+    df = pd.read_csv(csv_file, usecols=comment_columns)
     
     comments = []
     for column in comment_columns:
