@@ -9,7 +9,7 @@ def download_dataset():
     ]
     for command in commands:
         subprocess.run(command)
-    print('Capgemini_Employee_Reviews_from_AmbitionBox.csv downloaded')
+    print('Capgemini_Employee_Reviews_from_AmbitionBox.csv downloaded!')
 
 def download_models(models):
     # Install ollama with: curl -fsSL https://ollama.com/install.sh | sh
@@ -23,6 +23,7 @@ def download_models(models):
     for model in models:
         if model_not_downloaded(model):
             subprocess.run(["ollama","pull",model])
+        print(f'{model} good to go!')
 
 if __name__ == '__main__':
     models = [
@@ -32,5 +33,5 @@ if __name__ == '__main__':
         'stablelm2:12b'
     ]
     
-    download_models(models)
     download_dataset()
+    download_models(models)
