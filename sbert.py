@@ -18,44 +18,42 @@ def clustering_comments(comments:list, model_name:str, num_clusters:int):
     return embeddings, comment_cluster_list
 
 
-def generate_plot_fig(embeddings, comment_cluster_list, num_clusters:int, model_name:str):
-    tsne = TSNE(n_components=2, random_state=0) # Redução de dimensionalidade com t-SNE para visualização
-    embeddings_2d = tsne.fit_transform(embeddings.cpu().detach().numpy())
-
-    # Plotar os clusters
-    plt.figure(figsize=(10, 8))
-    for i in range(num_clusters):
-        cluster_points = embeddings_2d[comment_cluster_list == i]
-        plt.scatter(cluster_points[:, 0], cluster_points[:, 1], label=f'Cluster {i}')
-
-    plt.legend()
-    plt.savefig(f"sbert/{model_name}_{num_clusters}_clusters.png")
-
-def generate_cluster_description_list(comments, comment_cluster_list, num_clusters, num_terms):
-    cluster_texts = [[] for _ in range(num_clusters)]
+def generate_cluster_description(comments, comment_cluster_list, num_clusters, num_terms):
+    cluster_texts = [[] for _ in range(num_clusters)] # Agrupar os comentários por cluster
     for i, label in enumerate(comment_cluster_list):
         cluster_texts[label].append(comments[i])
-
-    # Criar TF-IDF para cada cluster e identificar termos importantes
-    for idx, texts in enumerate(cluster_texts):
-        tfidf = TfidfVectorizer(max_features=num_terms)  # Limite para as 10 palavras mais relevantes
-        tfidf_matrix = tfidf.fit_transform(texts)
-        termos_importantes = tfidf.get_feature_names_out()
-        print(f"Cluster {idx} - Termos principais: {termos_importantes}")
-
-    for idx, texts in enumerate(cluster_texts):
-        # Transformar textos para TF-IDF antes de aplicar NMF
+    
+    cluster_topics = {}  # Dicionário para armazenar os tópicos de cada cluster
+    for idx, texts in enumerate(cluster_texts): # Analisar cada cluster e identificar os tópicos com NMF
+        # Transformar os textos em uma matriz TF-IDF
         tfidf = TfidfVectorizer(max_features=1000)
         tfidf_matrix = tfidf.fit_transform(texts)
 
         # Aplicar NMF para descobrir tópicos
-        nmf_model = NMF(n_components=1, random_state=0)
+        nmf_model = NMF(n_components=1, random_state=0, max_iter=400)
         nmf_model.fit(tfidf_matrix)
 
         # Obter as palavras principais do tópico
-        for topic_idx, topic in enumerate(nmf_model.components_):
-            termos_importantes = [tfidf.get_feature_names_out()[i] for i in topic.argsort()[-num_terms:]]
-            print(f"Cluster {idx} - Termos principais: {termos_importantes}")
+        topic = nmf_model.components_[0]  # Como n_components=1, pegamos o único tópico gerado
+        termos_importantes = [tfidf.get_feature_names_out()[i] for i in topic.argsort()[-num_terms:]]
+        
+        # Armazenar os termos importantes no dicionário
+        cluster_topics[idx] = termos_importantes
+
+    return cluster_topics
+
+def generate_plot_fig(embeddings, comment_cluster_list, cluster_description_dict, num_clusters:int, model_name:str):
+    tsne = TSNE(n_components=2, random_state=0) # Redução de dimensionalidade com t-SNE para visualização
+    embeddings_2d = tsne.fit_transform(embeddings.cpu().detach().numpy())
+
+    # Plotar os clusters
+    plt.figure(figsize=(12, 10))
+    for i in range(num_clusters):
+        cluster_points = embeddings_2d[comment_cluster_list == i]
+        plt.scatter(cluster_points[:, 0], cluster_points[:, 1], label=f'{cluster_description_dict[i]}')
+
+    plt.legend(bbox_to_anchor=(0.5, 1.15), loc='upper center', ncol=1)
+    plt.savefig(f"sbert/{model_name}_{num_clusters}_clusters.png")
 
 if __name__ == '__main__':
     comments = generate_comments_list(['Likes','Dislikes'])[:5000]
@@ -65,5 +63,5 @@ if __name__ == '__main__':
     num_interest_terms = 10
 
     embeddings, comment_cluster_list = clustering_comments(comments, model, num_clusters)
-    generate_plot_fig(embeddings, comment_cluster_list, num_clusters, model)
-    generate_cluster_description_list(comments, comment_cluster_list, num_clusters, num_interest_terms)
+    cluster_description_dict = generate_cluster_description(comments, comment_cluster_list, num_clusters, num_interest_terms)
+    generate_plot_fig(embeddings, comment_cluster_list, cluster_description_dict, num_clusters, model)
