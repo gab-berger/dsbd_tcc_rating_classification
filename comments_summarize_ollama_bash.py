@@ -3,7 +3,7 @@ import random
 import subprocess
 from time import time
 
-def generate_comments_list(comment_columns:list) -> list:
+def generate_comments_list(comment_columns:list=['Likes','Dislikes']) -> list:
     csv_file = 'Capgemini_Employee_Reviews_from_AmbitionBox.csv'
     df = pd.read_csv(csv_file, usecols=comment_columns)
     
@@ -12,9 +12,6 @@ def generate_comments_list(comment_columns:list) -> list:
         comments_column = df[df[column].notna() & (df[column] != '')][column].tolist()
         for comment in range(len(comments_column)):
             comments.append(comments_column[comment])
-
-    random.seed(42)
-    random.shuffle(comments)
 
     return comments
 
@@ -37,6 +34,8 @@ def message_ollama(prompt, model='llama3.2'):
 
 def main(models:list, start_prompt:str, end_prompt:str)->str: 
     comments = generate_comments_list(['Likes','Dislikes'])
+    random.seed(42)
+    random.shuffle(comments)
     comments_n = len(comments)
 
     prompt = start_prompt
