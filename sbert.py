@@ -3,7 +3,9 @@ from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import NMF
+from sklearn.metrics import silhouette_score, silhouette_samples, davies_bouldin_score, calinski_harabasz_score
 import matplotlib.pyplot as plt
+import numpy as np
 
 from comments_summarize_ollama_bash import generate_comments_list
 
@@ -15,7 +17,7 @@ def clustering_comments(comments:list, model_name:str, num_clusters:int):
     clustering_model.fit(embeddings) # Ajustar o modelo de clustering nos embeddings
     comment_cluster_list = clustering_model.labels_ # Atribuir cada comentário a um cluster
 
-    return embeddings, comment_cluster_list
+    return embeddings, comment_cluster_list, clustering_model
 
 
 def generate_cluster_description(comments, comment_cluster_list, num_clusters, num_terms):
@@ -55,13 +57,30 @@ def generate_plot_fig(embeddings, comment_cluster_list, cluster_description_dict
     plt.legend(bbox_to_anchor=(0.5, 1.15), loc='upper center', ncol=1)
     plt.savefig(f"sbert/{model_name}_{num_clusters}_clusters.png")
 
-if __name__ == '__main__':
-    comments = generate_comments_list(['Likes','Dislikes'])[:5000]
+def generate_cluster_metrics(clustering_model, embeddings, num_clusters):
+    inertia = clustering_model.inertia_
+    print(inertia)
+    silhouette_avg = silhouette_score(embeddings, clustering_model.labels_)
+    print(silhouette_avg)
+    silhouette_vals = silhouette_samples(embeddings, clustering_model.labels_)
+    silhouette_avg_clusters = {}
+    for i in range(num_clusters):
+        cluster_silhouette = silhouette_vals[clustering_model.labels_ == i]
+        silhouette_avg_clusters[i] = np.mean(cluster_silhouette)
+    print(silhouette_avg_clusters)
+    db_index = davies_bouldin_score(embeddings, clustering_model.labels_)
+    print(db_index)
+    ch_index = calinski_harabasz_score(embeddings, clustering_model.labels_)
+    print(ch_index)
 
-    model = 'paraphrase-MiniLM-L12-v2' #'all-MiniLM-L6-v2'
+if __name__ == '__main__':
+    comments = generate_comments_list(['Likes','Dislikes'])#[:5000]
+
+    model = 'all-MiniLM-L6-v2' #'paraphrase-MiniLM-L12-v2'
     num_clusters = 10
     num_interest_terms = 10
 
-    embeddings, comment_cluster_list = clustering_comments(comments, model, num_clusters)
+    embeddings, comment_cluster_list, clustering_model = clustering_comments(comments, model, num_clusters)
     cluster_description_dict = generate_cluster_description(comments, comment_cluster_list, num_clusters, num_interest_terms)
     generate_plot_fig(embeddings, comment_cluster_list, cluster_description_dict, num_clusters, model)
+    generate_cluster_metrics(clustering_model, embeddings, num_clusters)
