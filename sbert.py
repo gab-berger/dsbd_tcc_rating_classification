@@ -32,7 +32,7 @@ def generate_cluster_description(comments, comment_cluster_list, num_clusters, n
         tfidf_matrix = tfidf.fit_transform(texts)
 
         # Aplicar NMF para descobrir tópicos
-        nmf_model = NMF(n_components=1, random_state=0, max_iter=400)
+        nmf_model = NMF(n_components=1, random_state=0, max_iter=1000)
         nmf_model.fit(tfidf_matrix)
 
         # Obter as palavras principais do tópico
@@ -59,24 +59,24 @@ def generate_plot_fig(embeddings, comment_cluster_list, cluster_description_dict
 
 def generate_cluster_metrics(clustering_model, embeddings, num_clusters):
     inertia = clustering_model.inertia_
-    print(inertia)
+    print(f'inertia: {inertia}')
     silhouette_avg = silhouette_score(embeddings, clustering_model.labels_)
-    print(silhouette_avg)
+    print(f'silhouette_avg: {silhouette_avg}')
     silhouette_vals = silhouette_samples(embeddings, clustering_model.labels_)
     silhouette_avg_clusters = {}
     for i in range(num_clusters):
         cluster_silhouette = silhouette_vals[clustering_model.labels_ == i]
         silhouette_avg_clusters[i] = np.mean(cluster_silhouette)
-    print(silhouette_avg_clusters)
+    print(f'silhouette_avg_clusters: {silhouette_avg_clusters}')
     db_index = davies_bouldin_score(embeddings, clustering_model.labels_)
-    print(db_index)
+    print(f'db_index: {db_index}')
     ch_index = calinski_harabasz_score(embeddings, clustering_model.labels_)
-    print(ch_index)
+    print(f'ch_index: {ch_index}')
 
 if __name__ == '__main__':
     comments = generate_comments_list(['Likes','Dislikes'])#[:5000]
 
-    model = 'all-MiniLM-L6-v2' #'paraphrase-MiniLM-L12-v2'
+    model = ['all-MiniLM-L6-v2','paraphrase-MiniLM-L12-v2'][0]
     num_clusters = 10
     num_interest_terms = 10
 
