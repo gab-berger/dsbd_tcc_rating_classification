@@ -5,32 +5,46 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import NMF
 from sklearn.metrics import silhouette_score, silhouette_samples, davies_bouldin_score, calinski_harabasz_score
 import matplotlib.pyplot as plt
+import torch
 import os
+import time
+from datetime import datetime
 import numpy as np
 import pandas as pd
 
 from comments_summarize_ollama_bash import generate_comments_list
 
-def main(comments, model, num_clusters):
-    embeddings, comment_cluster_list, clustering_model = clustering_comments(comments, model, num_clusters)
-    cluster_description_dict = generate_cluster_description(comments, comment_cluster_list, num_clusters)
-    generate_plot_fig(embeddings, comment_cluster_list, cluster_description_dict, num_clusters, model)
+import warnings
+warnings.filterwarnings("ignore")
+
+def main(comments, model, num_clusters, max_iterations):
+    print(f"-----> START {model} {num_clusters} clusters ...")
+
+    embeddings, comment_cluster_list, clustering_model, clustering_time = clustering_comments(comments, model, num_clusters)
+    cluster_description_dict, description_time = generate_cluster_description(comments, comment_cluster_list, num_clusters, max_iterations)
+    
+    #generate_plot_fig(embeddings, comment_cluster_list, cluster_description_dict, num_clusters, model)
+    model_info = [model,num_clusters,clustering_time]
     metrics = generate_cluster_metrics(clustering_model, embeddings, num_clusters)
-    model_info = [model,num_clusters]
-    return model_info + metrics
+    comments_info = [max_iterations,description_time,cluster_description_dict,comment_cluster_list]
+    
+    print(f"-----> DONE {model} {num_clusters} clusters! [clustering {clustering_time}s] [description {description_time}s]")
+    return model_info + metrics + comments_info
 
 def clustering_comments(comments:list, model_name:str, num_clusters:int):
+    start_time = time.time()
     model = SentenceTransformer(model_name)
     embeddings = model.encode(comments, convert_to_tensor=True)
     clustering_model = KMeans(n_clusters=num_clusters)
 
     clustering_model.fit(embeddings) # Ajustar o modelo de clustering nos embeddings
     comment_cluster_list = clustering_model.labels_ # Atribuir cada comentário a um cluster
+    clustering_time = round(time.time() - start_time)
+    return embeddings, comment_cluster_list, clustering_model, clustering_time
 
-    return embeddings, comment_cluster_list, clustering_model
 
-
-def generate_cluster_description(comments, comment_cluster_list, num_clusters):
+def generate_cluster_description(comments, comment_cluster_list, num_clusters, max_iterations):
+    start_time = time.time()
     cluster_texts = [[] for _ in range(num_clusters)] # Agrupar os comentários por cluster
     for i, label in enumerate(comment_cluster_list):
         cluster_texts[label].append(comments[i])
@@ -42,7 +56,7 @@ def generate_cluster_description(comments, comment_cluster_list, num_clusters):
         tfidf_matrix = tfidf.fit_transform(texts)
 
         # Aplicar NMF para descobrir tópicos
-        nmf_model = NMF(n_components=1, random_state=0, max_iter=10_000)
+        nmf_model = NMF(n_components=1, random_state=0, max_iter=max_iterations)
         nmf_model.fit(tfidf_matrix)
 
         # Obter as palavras principais do tópico
@@ -52,8 +66,8 @@ def generate_cluster_description(comments, comment_cluster_list, num_clusters):
         
         # Armazenar os termos importantes no dicionário
         cluster_topics[idx] = termos_importantes
-
-    return cluster_topics
+    description_time = round(time.time() - start_time)
+    return cluster_topics, description_time
 
 def generate_plot_fig(embeddings, comment_cluster_list, cluster_description_dict, num_clusters:int, model_name:str):
     tsne = TSNE(n_components=2, random_state=0) # Redução de dimensionalidade com t-SNE para visualização
@@ -76,13 +90,13 @@ def generate_cluster_metrics(clustering_model, embeddings, num_clusters):
     silhouette_avg_clusters = {}
     for i in range(num_clusters):
         cluster_silhouette = silhouette_vals[clustering_model.labels_ == i]
-        silhouette_avg_clusters[i] = np.mean(cluster_silhouette)
+        silhouette_avg_clusters[i] = float(np.mean(cluster_silhouette))
     db_index = davies_bouldin_score(embeddings, clustering_model.labels_)
     ch_index = calinski_harabasz_score(embeddings, clustering_model.labels_)
     return [inertia,silhouette_avg,silhouette_avg,db_index,ch_index,silhouette_avg_clusters]
 
 if __name__ == '__main__':
-    comments = generate_comments_list(['Likes','Dislikes'])[:5000]
+    comments = generate_comments_list(['Likes','Dislikes'])
     models = [
     'all-MiniLM-L6-v2',            # Muito leve
     'paraphrase-MiniLM-L12-v2',    # Leve, mas mais robusto que L6
@@ -92,14 +106,15 @@ if __name__ == '__main__':
     'paraphrase-mpnet-base-v2',    # Intermediário, ótima para parafraseamento
     'stsb-roberta-large'           # Mais pesado, alta precisão semântica
     ]
-    nums_clusters = [10, 25, 50, 75, 100]
+    nums_clusters = [10, 50, 100, 200]
     
     infos = []
     for model in models:
         for num_clusters in nums_clusters:
-            info = main(comments, model, num_clusters)
+            info = main(comments, model, num_clusters, max_iterations=10_000)
             infos.append(info)
     
-    df = pd.DataFrame(infos, columns=['model','num_clusters','inertia','silhouette_avg','silhouette_avg','db_index','ch_index','silhouette_avg_clusters'])
-    print(df)
-    pd.to_pickle(df,'sbert/models_metrics.csv')
+    df = pd.DataFrame(infos, columns=['model','num_clusters','clustering_time','inertia','silhouette_avg','silhouette_avg','db_index','ch_index','silhouette_avg_clusters','max_iterations','description_time','cluster_description_dict','comment_cluster_list'])
+    csv_name = f'sbert/models_metrics_{datetime.now().strftime("%y.%m.%d_%H.%M")}.csv'
+    df.to_csv(csv_name)
+    print(f'DATA SAVED AT: {csv_name}')
