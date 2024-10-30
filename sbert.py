@@ -9,6 +9,7 @@ import torch
 import os
 import time
 from datetime import datetime
+import pickle
 import numpy as np
 import pandas as pd
 
@@ -24,8 +25,9 @@ def main(comments, model, num_clusters, max_iterations):
     cluster_description_dict, description_time = generate_cluster_description(comments, comment_cluster_list, num_clusters, max_iterations)
     
     #generate_plot_fig(embeddings, comment_cluster_list, cluster_description_dict, num_clusters, model)
-    model_info = [model,num_clusters,clustering_time]
     metrics = generate_cluster_metrics(clustering_model, embeddings, num_clusters)
+    run_datetime = datetime.now().strftime("%y.%m.%d_%H.%M")
+    model_info = [model,num_clusters,clustering_time,run_datetime]
     comments_info = [max_iterations,description_time,cluster_description_dict,comment_cluster_list]
     
     print(f"-----> DONE {model} {num_clusters} clusters! [clustering {clustering_time}s] [description {description_time}s]")
@@ -96,7 +98,7 @@ def generate_cluster_metrics(clustering_model, embeddings, num_clusters):
     return [inertia,silhouette_avg,silhouette_avg,db_index,ch_index,silhouette_avg_clusters]
 
 if __name__ == '__main__':
-    comments = generate_comments_list(['Likes','Dislikes'])
+    comments = generate_comments_list(['Likes','Dislikes'])[:500]
     models = [
     'all-MiniLM-L6-v2',            # Muito leve
     'paraphrase-MiniLM-L12-v2',    # Leve, mas mais robusto que L6
@@ -108,13 +110,16 @@ if __name__ == '__main__':
     ]
     nums_clusters = [10, 50, 100, 200]
     
-    infos = []
-    for model in models:
-        for num_clusters in nums_clusters:
-            info = main(comments, model, num_clusters, max_iterations=10_000)
-            infos.append(info)
+    pickle_file = 'sbert/sbert_data.pickle'
+    df = pd.DataFrame(columns=['model','num_clusters','clustering_time','run_datetime','inertia','silhouette_avg','silhouette_avg','db_index','ch_index','silhouette_avg_clusters','max_iterations','description_time','cluster_description_dict','comment_cluster_list'])
+    if os.path.exists(pickle_file):
+        df = pd.read_pickle(pickle_file)
+    pd.to_pickle(df, pickle_file)
     
-    df = pd.DataFrame(infos, columns=['model','num_clusters','clustering_time','inertia','silhouette_avg','silhouette_avg','db_index','ch_index','silhouette_avg_clusters','max_iterations','description_time','cluster_description_dict','comment_cluster_list'])
-    csv_name = f'sbert/models_metrics_{datetime.now().strftime("%y.%m.%d_%H.%M")}.csv'
-    df.to_csv(csv_name)
-    print(f'DATA SAVED AT: {csv_name}')
+    for model in models:
+        for num_clusters in nums_clusters[:1]:
+            new_data = main(comments, model, num_clusters, max_iterations=1_000)
+            
+            df = pd.read_pickle(pickle_file)
+            df = df._append(pd.Series(new_data, index=df.columns), ignore_index=True)
+            pd.to_pickle(df, pickle_file)
