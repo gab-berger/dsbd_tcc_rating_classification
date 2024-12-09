@@ -1,7 +1,7 @@
 import subprocess
 
 def download_dataset():
-    download_url = 'https://www.kaggle.com/api/v1/datasets/download/manishkr1754/capgemini-employee-reviews-dataset'
+    download_url = 'https://www.kaggle.com/api/v1/datasets/download/davidgauthier/glassdoor-job-reviews-2'
     commands = [
         ['curl','-L','-o','download.zip',download_url],
         ['unzip','-o','download.zip'],

@@ -1,4 +1,5 @@
 *.csv
+*.db
 *.zip
 *.txt
 *.png
