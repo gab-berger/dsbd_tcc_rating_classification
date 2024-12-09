@@ -9,7 +9,7 @@ def download_dataset():
     ]
     for command in commands:
         subprocess.run(command)
-    print('Capgemini_Employee_Reviews_from_AmbitionBox.csv downloaded!')
+    print('all_reviews.csv downloaded!')
 
 def download_models(models):
     # Install ollama with: curl -fsSL https://ollama.com/install.sh | sh
