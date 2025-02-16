@@ -30,6 +30,8 @@ if __name__ == '__main__':
         'stablelm2',
         'llama3.2',
         'llama3.1',
+        'deepseek-r1:1.5b',
+        'deepseek-r1:8b',
         'stablelm2:12b'
     ]
     

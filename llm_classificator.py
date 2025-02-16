@@ -1,0 +1,119 @@
+import os
+import pandas as pd
+import subprocess
+from time import sleep, time
+from collections import Counter
+import warnings
+
+warnings.filterwarnings("ignore")
+
+def generate_prompt_rating(pros, cons):
+    return f"""Evaluate the following employee feedback and determine the overall rating based on the provided pros and cons:
+
+Pros: {pros}
+Cons: {cons}
+
+Rating scale (1 to 5):
+    - 1: Very poor experience
+    - 2: Below average experience
+    - 3: Neutral or mixed experience
+    - 4: Good experience
+    - 5: Excellent experience
+
+Output requirements:
+    - Respond with ONLY a single character: '1', '2', '3', '4', or '5'.
+    - Do NOT include any explanations, justifications, extra text, or code.
+    - Responses containing anything other than '1', '2', '3', '4', or '5' are INVALID.
+    - Your response must be exactly ONE character long.
+    - STRICTLY follow these rules.
+"""
+
+def llm_query(prompt: str, model: str) -> int:
+    command = ['ollama', 'run', model]
+    try:
+        result = subprocess.run(command, input=prompt, capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"Error executing Ollama: {result.stderr}")
+            return None
+        output = result.stdout.strip()
+        last20 = output[-5:] if len(output) >= 5 else output
+        for char in reversed(last20):
+            if char in ['1', '2', '3', '4', '5']:
+                return int(char)
+        else:
+            #print(f"Unexpected response: {output}")
+            return None
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return None
+
+def load_existing_predictions(output_filename: str) -> pd.DataFrame:
+    if os.path.exists(output_filename):
+        return pd.read_parquet(output_filename)
+    else:
+        return pd.DataFrame(columns=['id', 'classification', 'num_tries', 'prediction_time', 'ts_prediction'])
+
+def process_comment(comment_row, model: str, num_tries: int) -> dict:
+    prompt = generate_prompt_rating(comment_row['pros'], comment_row['cons'])
+    ratings = []
+    start_time = time()
+    for i in range(num_tries):
+        rating = llm_query(prompt, model)
+        if rating is not None:
+            ratings.append(rating)
+    elapsed_time = round(time() - start_time, 2)
+    ts_prediction = pd.Timestamp.now()
+    most_common_rating = Counter(ratings).most_common(1)[0][0] if ratings else None
+    return {
+        'id': comment_row['id'],
+        'classification': most_common_rating,
+        'num_tries': num_tries,
+        'prediction_time': elapsed_time,
+        'ts_prediction': ts_prediction
+    }
+
+def save_predictions(pred_df: pd.DataFrame, output_filename: str):
+    pred_df.to_parquet(output_filename, index=False)
+    print(f"Predictions saved to {output_filename}")
+
+def main(model: str, num_tries: int = 5, save_interval: int = 10):
+    print('Loading comments.parquet...')
+    comments_df = pd.read_parquet('comments.parquet')
+    print('comments.parquet loaded!')
+
+    output_filename = f"pred_{model}.parquet"
+    print(f'Loading {output_filename}...')
+    pred_df = load_existing_predictions(output_filename)
+    print(f'{output_filename} loaded!')
+
+    print('Filtering out already analyzed comments...')
+    analyzed_ids = set(pred_df['id'].unique())
+    remaining_df = comments_df[~comments_df['id'].isin(analyzed_ids)]
+    print('Analyzed comments filtered out!')
+    
+    print(f"Starting predictions with model {model}...")
+    new_predictions = []
+    count = 0
+    
+    for idx, row in remaining_df.iterrows():
+        prediction = process_comment(row, model, num_tries)
+        new_predictions.append(prediction)
+        print(f"[{prediction['prediction_time']}s] Comment {row['id'][0:4]}...{row['id'][-5:-1]} done! Prediction: {prediction['classification']}")
+        count += 1
+        
+        if count % save_interval == 0:
+            temp_df = pd.DataFrame(new_predictions)
+            pred_df = pd.concat([pred_df, temp_df], ignore_index=True)
+            save_predictions(pred_df, output_filename)
+            new_predictions = []
+    
+    if new_predictions:
+        temp_df = pd.DataFrame(new_predictions)
+        pred_df = pd.concat([pred_df, temp_df], ignore_index=True)
+        save_predictions(pred_df, output_filename)
+    
+    print(f"Total new comments processed: {count}")
+
+if __name__ == '__main__':
+    model_name = 'deepseek-r1:1.5b'
+    main(model_name, num_tries=5, save_interval=10)
