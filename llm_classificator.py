@@ -98,7 +98,7 @@ def main(model: str, num_tries: int = 5, save_interval: int = 10):
     for idx, row in remaining_df.iterrows():
         prediction = process_comment(row, model, num_tries)
         new_predictions.append(prediction)
-        print(f"[{prediction['prediction_time']}s] Comment {row['id'][0:4]}...{row['id'][-5:-1]} done! Prediction: {prediction['classification']}")
+        print(f"({idx}/{save_interval}) Comment {row['id'][0:4]}...{row['id'][-5:-1]} done! Prediction: {prediction['classification']} [{prediction['prediction_time']}s]")
         count += 1
         
         if count % save_interval == 0:
@@ -115,5 +115,12 @@ def main(model: str, num_tries: int = 5, save_interval: int = 10):
     print(f"Total new comments processed: {count}")
 
 if __name__ == '__main__':
-    model_name = 'deepseek-r1:1.5b'
-    main(model_name, num_tries=5, save_interval=10)
+    model_name  = [
+        'deepseek-r1:1.5b', #1.5b
+        'stablelm2', #1.6b
+        'llama3.2', #3b
+        'deepseek-r1:8b', #8b
+        'llama3.1', #8b
+        'stablelm2:12b' #12b
+    ][1]
+    main(model_name, num_tries=5, save_interval=5)
