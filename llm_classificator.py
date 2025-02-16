@@ -57,17 +57,24 @@ def process_comment(comment_row, model: str, num_tries: int) -> dict:
     prompt = generate_prompt_rating(comment_row['pros'], comment_row['cons'])
     ratings = []
     start_time = time()
+    
     for i in range(num_tries):
         rating = llm_query(prompt, model)
         if rating is not None:
             ratings.append(rating)
+            counts = Counter(ratings)
+            most_common_rating, count = counts.most_common(1)[0]
+            
+            if count > num_tries // 2:
+                break
+    
     elapsed_time = round(time() - start_time, 2)
     ts_prediction = pd.Timestamp.now()
-    most_common_rating = Counter(ratings).most_common(1)[0][0] if ratings else None
+    
     return {
         'id': comment_row['id'],
-        'classification': most_common_rating,
-        'num_tries': num_tries,
+        'classification': most_common_rating if ratings else None,
+        'num_tries': len(ratings),
         'prediction_time': elapsed_time,
         'ts_prediction': ts_prediction
     }
@@ -98,7 +105,7 @@ def main(model: str, num_tries: int = 5, save_interval: int = 10):
     for idx, row in remaining_df.iterrows():
         prediction = process_comment(row, model, num_tries)
         new_predictions.append(prediction)
-        print(f"({idx}/{save_interval}) Comment {row['id'][0:4]}...{row['id'][-5:-1]} done! Prediction: {prediction['classification']} [{prediction['prediction_time']}s]")
+        print(f"({idx+1}/{save_interval}) Comment {row['id'][0:4]}...{row['id'][-5:-1]} done! Prediction: {prediction['classification']} [{round(prediction['prediction_time'],0)}s]")
         count += 1
         
         if count % save_interval == 0:
