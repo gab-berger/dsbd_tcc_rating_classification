@@ -1,8 +1,8 @@
 import pandas as pd
 import hashlib
 
-CSV_PATH = "all_reviews.csv"       # Caminho para o arquivo CSV
-PARQUET_PATH = "comments.parquet"  # Caminho para o arquivo Parquet
+CSV_PATH = "data/all_reviews.csv"       # Caminho para o arquivo CSV
+PARQUET_PATH = "/comments.parquet"  # Caminho para o arquivo Parquet
 
 def load_csv(csv_path):
     """Carrega o arquivo CSV e seleciona as colunas necessárias."""
@@ -54,7 +54,7 @@ def main():
     df = load_csv(CSV_PATH)
     df = clean_data(df)
     df = generate_unique_ids(df)
-    save_to_parquet(df, PARQUET_PATH)
+    #save_to_parquet(df, PARQUET_PATH)
     print("Processo concluído!")
 
 if __name__ == "__main__":

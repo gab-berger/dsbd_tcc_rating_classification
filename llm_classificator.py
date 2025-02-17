@@ -7,19 +7,26 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
+def load_existing_predictions(output_filename: str) -> pd.DataFrame:
+    output_filename = 'data/'+output_filename
+    if os.path.exists(output_filename):
+        return pd.read_parquet(output_filename)
+    else:
+        return pd.DataFrame(columns=['id', 'classification', 'num_tries', 'prediction_time', 'ts_prediction'])
+
 def load_data(output_filename:str) -> pd.DataFrame:
-    print('Loading comments.parquet...', end=' ')
-    comments_df = pd.read_parquet('comments.parquet')
-    print('loaded!')
-
-    print(f'Loading {output_filename}...', end=' ')
+    print('Loading comments.parquet...')
+    comments_df = pd.read_parquet('data/comments.parquet')
+    print('comments.parquet loaded!')
+    
+    print(f'Loading {output_filename}...')
     pred_df = load_existing_predictions(output_filename)
-    print(f'loaded!')
+    print(f'{output_filename} loaded!')
 
-    print('Filtering out already analyzed comments...', end=' ')
+    print('Filtering out already analyzed comments...')
     analyzed_ids = set(pred_df['id'].unique())
     remaining_df = comments_df[~comments_df['id'].isin(analyzed_ids)]
-    print('done!')
+    print('Filtering done!')
 
     return remaining_df
 
@@ -62,12 +69,6 @@ def llm_query(prompt: str, model: str) -> int:
     except Exception as e:
         print(f"Unexpected error: {e}")
         return None
-
-def load_existing_predictions(output_filename: str) -> pd.DataFrame:
-    if os.path.exists(output_filename):
-        return pd.read_parquet(output_filename)
-    else:
-        return pd.DataFrame(columns=['id', 'classification', 'num_tries', 'prediction_time', 'ts_prediction'])
 
 def process_comment(comment_row, model: str, num_tries: int) -> dict:
     prompt = generate_prompt_rating(comment_row['pros'], comment_row['cons'])
