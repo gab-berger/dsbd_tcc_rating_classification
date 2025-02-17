@@ -8,7 +8,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def load_existing_predictions(output_filename: str) -> {pd.DataFrame}:
-    output_filename = 'data/'+output_filename
+    output_filename = output_filename
     if os.path.exists(output_filename):
         return pd.read_parquet(output_filename)
     else:
@@ -124,7 +124,7 @@ def main(model:str, df_interval:list=[None,None]):
 
     row_start, row_end = df_interval
 
-    output_filename = f"pred_{model}.parquet" 
+    output_filename = f"data/pred_{model}.parquet" 
     remaining_df, pred_df = load_data(output_filename, row_start, row_end)
 
     print(f"{'='*50}\nStarting predictions with model {model}... [{row_start} -> {row_end}]\n{'='*50}")
@@ -134,7 +134,7 @@ def main(model:str, df_interval:list=[None,None]):
     for idx, row in remaining_df.iterrows():
         prediction = process_comment(row, model, TOTAL_LLM_TRIES)
         new_predictions.append(prediction)
-        print(f"[{idx+1}/{SAVE_INTERVAL}] Comment {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['classification']} ({int(prediction['prediction_time'])}s/{int(prediction['tries'])}t)")
+        print(f"[{idx+1}/{SAVE_INTERVAL}] {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['classification']} ({int(prediction['prediction_time'])}s/{int(prediction['tries'])}t)")
         count += 1
         
         if count % SAVE_INTERVAL == 0:
@@ -161,6 +161,6 @@ if __name__ == '__main__':
         #'vicuna',
         #'falcon'
     ]
-    for n in range(0, 1000, 100):
+    for n in [0]: #range(0, 100, 100):
         main(models[3], [n, n+99])
     print('All work done! :)')
