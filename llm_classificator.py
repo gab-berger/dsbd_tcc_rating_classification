@@ -92,13 +92,12 @@ def process_comment(comment_row, model: str, num_tries:int) -> dict:
             break
         last_rating = rating
 
-        if rating is not None:
-            ratings.append(rating)
-            counts = Counter(ratings)
-            most_common_rating, count = counts.most_common(1)[0]
-            
-            if count > num_tries // 2:
-                break
+        ratings.append(rating)
+        counts = Counter(ratings)
+        most_common_rating, count = counts.most_common(1)[0]
+        
+        if count > num_tries // 2:
+            break
     
     elapsed_time = round(time() - start_time, 2)
     ts_prediction = pd.Timestamp.now()
@@ -106,7 +105,7 @@ def process_comment(comment_row, model: str, num_tries:int) -> dict:
     return {
         'id': comment_row['id'],
         'classification': most_common_rating if ratings else None,
-        'num_tries': len(ratings),
+        'tries': len(ratings),
         'prediction_time': elapsed_time,
         'ts_prediction': ts_prediction
     }
