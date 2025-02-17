@@ -1,7 +1,7 @@
 import os
 import pandas as pd
-import subprocess
-from time import sleep, time
+from ollama import ChatResponse, chat
+from time import time
 from collections import Counter
 import warnings
 
@@ -56,22 +56,19 @@ Output requirements:
 """
 
 def llm_query(prompt: str, model: str) -> int:
-    command = ['ollama', 'run', model]
     try:
-        result = subprocess.run(command, input=prompt, capture_output=True, text=True)
-        if result.returncode != 0:
-            print(f"Error executing Ollama: {result.stderr}")
-            return None
-        output = result.stdout.strip()
-        last20 = output[-5:] if len(output) >= 5 else output
-        for char in reversed(last20):
+        response: ChatResponse = chat(
+            model=model,
+            messages=[{'role': 'user','content': prompt}]
+            )
+        answer = str(response['message']['content']).strip()
+
+        for char in reversed(answer):
             if char in ['1', '2', '3', '4', '5']:
                 return int(char)
-        else:
-            #print(f"Unexpected response: {output}")
-            return None
+        return None
+    
     except Exception as e:
-        print(f"Unexpected error: {e}")
         return None
 
 def process_comment(comment_row, model: str, num_tries: int) -> dict:

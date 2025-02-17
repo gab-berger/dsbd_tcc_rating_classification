@@ -39,5 +39,5 @@ if __name__ == '__main__':
         'falcon'
     ]
     
-    #download_dataset()
+    download_dataset()
     download_models(models)
