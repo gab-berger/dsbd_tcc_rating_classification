@@ -127,7 +127,7 @@ def main(model:str, df_interval:list=[None,None]):
     output_filename = f"data/pred_{model}.parquet" 
     remaining_df, pred_df = load_data(output_filename, row_start, row_end)
 
-    print(f"{'='*50}\nStarting predictions with model {model}... [{row_start} -> {row_end}]\n{'='*50}")
+    print(f"{'='*60}\nStarting predictions with model {model}... [{row_start} -> {row_end}]\n{'='*60}")
     new_predictions = []
     count = 0
     
@@ -147,6 +147,8 @@ def main(model:str, df_interval:list=[None,None]):
         temp_df = pd.DataFrame(new_predictions)
         pred_df = pd.concat([pred_df, temp_df], ignore_index=True)
         save_predictions(pred_df, output_filename)
+    
+    print(f"{'='*60}\nModel {model} finished predictions! [{row_start} -> {row_end}]\n{'='*60}")
 
 if __name__ == '__main__':
     models  = [
@@ -155,12 +157,14 @@ if __name__ == '__main__':
         'llama3.1',
         'llama3.2',
         'deepseek-r1:8b',
-        'stablelm2:12b',
         'llama2:7b',
         'llama2:13b',
+        'stablelm2:12b',
         #'vicuna',
         #'falcon'
     ]
-    for n in [0]: #range(0, 100, 100):
-        main(models[3], [n, n+99])
+    for n in range(0, 100, 1000):
+        for model in models:
+            main(model, [n, n+99])
+    
     print('All work done! :)')
