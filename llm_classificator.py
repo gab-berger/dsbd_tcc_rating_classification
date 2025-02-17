@@ -7,7 +7,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-def load_existing_predictions(output_filename: str) -> pd.DataFrame:
+def load_existing_predictions(output_filename: str) -> {pd.DataFrame}:
     output_filename = 'data/'+output_filename
     if os.path.exists(output_filename):
         return pd.read_parquet(output_filename)
@@ -15,20 +15,26 @@ def load_existing_predictions(output_filename: str) -> pd.DataFrame:
         return pd.DataFrame(columns=['id', 'classification', 'num_tries', 'prediction_time', 'ts_prediction'])
 
 def load_data(output_filename:str) -> pd.DataFrame:
+    start_time = time()
     print('Loading comments.parquet...')
     comments_df = pd.read_parquet('data/comments.parquet')
-    print('comments.parquet loaded!')
-    
+    elapsed_time = int(time() - start_time)
+    print(f'comments.parquet loaded! ({elapsed_time}s)')
+
+    start_time = time()
     print(f'Loading {output_filename}...')
     pred_df = load_existing_predictions(output_filename)
-    print(f'{output_filename} loaded!')
+    elapsed_time = round(time() - start_time, 2)
+    print(f'{output_filename} loaded! ({elapsed_time}s)')
 
+    start_time = time()
     print('Filtering out already analyzed comments...')
     analyzed_ids = set(pred_df['id'].unique())
     remaining_df = comments_df[~comments_df['id'].isin(analyzed_ids)]
-    print('Filtering done!')
+    elapsed_time = round(time() - start_time, 2)
+    print(f'Filtering done! ({elapsed_time}s)')
 
-    return remaining_df
+    return remaining_df, pred_df
 
 def generate_prompt_rating(pros:str, cons:str) -> str:
     return f"""Evaluate the following employee feedback and determine the overall rating based on the provided pros and cons:
@@ -97,12 +103,14 @@ def process_comment(comment_row, model: str, num_tries: int) -> dict:
     }
 
 def save_predictions(pred_df: pd.DataFrame, output_filename: str):
+    start_time = time()
     pred_df.to_parquet(output_filename, index=False)
-    print(f"Predictions saved to {output_filename}")
+    elapsed_time = round(time() - start_time, 2)
+    print(f"Predictions saved to {output_filename} ({elapsed_time}s)")
 
 def main(model: str, num_tries: int = 5, save_interval: int = 10):
     output_filename = f"pred_{model}.parquet" 
-    remaining_df = load_data(output_filename)
+    remaining_df, pred_df = load_data(output_filename)
 
     print(f"Starting predictions with model {model}...")
     new_predictions = []
