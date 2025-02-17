@@ -82,10 +82,12 @@ def llm_query(prompt: str, model: str) -> int:
 def process_comment(comment_row, model: str, num_tries:int) -> dict:
     prompt = generate_prompt_rating(comment_row['pros'], comment_row['cons'])
     ratings = []
-    last_rating = 0
+    last_rating = 42
+    tries = 0
     start_time = time()
     
     for i in range(num_tries):
+        tries += 1
         rating = llm_query(prompt, model)
 
         if rating == last_rating:
@@ -105,7 +107,7 @@ def process_comment(comment_row, model: str, num_tries:int) -> dict:
     return {
         'id': comment_row['id'],
         'classification': most_common_rating if ratings else None,
-        'tries': len(ratings),
+        'tries': tries,
         'prediction_time': elapsed_time,
         'ts_prediction': ts_prediction
     }
@@ -125,14 +127,14 @@ def main(model:str, df_interval:list=[None,None]):
     output_filename = f"pred_{model}.parquet" 
     remaining_df, pred_df = load_data(output_filename, row_start, row_end)
 
-    print(f"Starting predictions with model {model}... [{row_start} -> {row_end}]")
+    print(f"{'='*50}\nStarting predictions with model {model}... [{row_start} -> {row_end}]\n{'='*50}")
     new_predictions = []
     count = 0
     
     for idx, row in remaining_df.iterrows():
         prediction = process_comment(row, model, TOTAL_LLM_TRIES)
         new_predictions.append(prediction)
-        print(f"[{idx+1}/{SAVE_INTERVAL}] Comment {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['classification']} ({int(prediction['prediction_time'])}s)")
+        print(f"[{idx+1}/{SAVE_INTERVAL}] Comment {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['classification']} ({int(prediction['prediction_time'])}s/{int(prediction['tries'])}t)")
         count += 1
         
         if count % SAVE_INTERVAL == 0:
