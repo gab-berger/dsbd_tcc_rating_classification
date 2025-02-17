@@ -137,14 +137,14 @@ def main(model: str, num_tries: int = 5, save_interval: int = 10):
 
 if __name__ == '__main__':
     model_name  = [
-        'deepseek-r1:1.5b',
-        'stablelm2',
-        'llama3.1',
-        'llama3.2',
-        'deepseek-r1:8b',
-        'stablelm2:12b',
-        'llama2:7b',
-        'llama2:13b',
+        # 'deepseek-r1:1.5b',
+        # 'stablelm2',
+        # 'llama3.1',
+        # 'llama3.2',
+        # 'deepseek-r1:8b',
+        # 'stablelm2:12b',
+        # 'llama2:7b',
+        # 'llama2:13b',
         'vicuna',
         'falcon'
     ][3]
