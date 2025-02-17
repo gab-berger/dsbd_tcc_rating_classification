@@ -54,7 +54,7 @@ def main():
     df = load_csv(CSV_PATH)
     df = clean_data(df)
     df = generate_unique_ids(df)
-    #save_to_parquet(df, PARQUET_PATH)
+    save_to_parquet(df, PARQUET_PATH)
     print("Processo concluído!")
 
 if __name__ == "__main__":

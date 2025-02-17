@@ -27,12 +27,16 @@ def download_models(models):
 
 if __name__ == '__main__':
     models = [
-        'stablelm2',
-        'llama3.2',
-        'llama3.1',
         'deepseek-r1:1.5b',
+        'stablelm2',
+        'llama3.1',
+        'llama3.2',
         'deepseek-r1:8b',
-        'stablelm2:12b'
+        'stablelm2:12b',
+        'llama2:7b',
+        'llama2:13b',
+        'vicuna',
+        'falcon'
     ]
     
     download_dataset()
