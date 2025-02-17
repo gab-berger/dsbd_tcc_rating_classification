@@ -74,10 +74,16 @@ def llm_query(prompt: str, model: str) -> int:
 def process_comment(comment_row, model: str, num_tries: int) -> dict:
     prompt = generate_prompt_rating(comment_row['pros'], comment_row['cons'])
     ratings = []
+    last_rating = 0
     start_time = time()
     
     for i in range(num_tries):
         rating = llm_query(prompt, model)
+
+        if rating == last_rating:
+            break
+        last_rating = rating
+        
         if rating is not None:
             ratings.append(rating)
             counts = Counter(ratings)
