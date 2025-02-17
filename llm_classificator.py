@@ -14,10 +14,18 @@ def load_existing_predictions(output_filename: str) -> {pd.DataFrame}:
     else:
         return pd.DataFrame(columns=['id', 'classification', 'num_tries', 'prediction_time', 'ts_prediction'])
 
-def load_data(output_filename:str) -> pd.DataFrame:
+def load_data(output_filename:str, row_start:int=None, row_end:int=None) -> pd.DataFrame:
     start_time = time()
     print('Loading comments.parquet...')
     comments_df = pd.read_parquet('data/comments.parquet')
+    
+    if row_start is None and row_end is None:
+        pass
+    else:
+        if row_end is None:
+            row_end = len(comments_df)
+        comments_df = comments_df.iloc[row_start:row_end]
+    
     elapsed_time = int(time() - start_time)
     print(f'comments.parquet loaded! ({elapsed_time}s)')
 
@@ -71,7 +79,7 @@ def llm_query(prompt: str, model: str) -> int:
     except Exception as e:
         return None
 
-def process_comment(comment_row, model: str, num_tries: int) -> dict:
+def process_comment(comment_row, model: str, num_tries:int) -> dict:
     prompt = generate_prompt_rating(comment_row['pros'], comment_row['cons'])
     ratings = []
     last_rating = 0
@@ -83,7 +91,7 @@ def process_comment(comment_row, model: str, num_tries: int) -> dict:
         if rating == last_rating:
             break
         last_rating = rating
-        
+
         if rating is not None:
             ratings.append(rating)
             counts = Counter(ratings)
@@ -109,21 +117,26 @@ def save_predictions(pred_df: pd.DataFrame, output_filename: str):
     elapsed_time = round(time() - start_time, 2)
     print(f"Predictions saved to {output_filename} ({elapsed_time}s)")
 
-def main(model: str, num_tries: int = 5, save_interval: int = 10):
+def main(model:str, df_interval:list=[None,None]):
+    SAVE_INTERVAL = 10
+    TOTAL_LLM_TRIES = 5
+
+    row_start, row_end = df_interval
+
     output_filename = f"pred_{model}.parquet" 
-    remaining_df, pred_df = load_data(output_filename)
+    remaining_df, pred_df = load_data(output_filename, row_start, row_end)
 
     print(f"Starting predictions with model {model}...")
     new_predictions = []
     count = 0
     
     for idx, row in remaining_df.iterrows():
-        prediction = process_comment(row, model, num_tries)
+        prediction = process_comment(row, model, TOTAL_LLM_TRIES)
         new_predictions.append(prediction)
-        print(f"[{idx+1}/{save_interval}] Comment {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['classification']} ({int(prediction['prediction_time'])}s)")
+        print(f"[{idx+1}/{SAVE_INTERVAL}] Comment {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['classification']} ({int(prediction['prediction_time'])}s)")
         count += 1
         
-        if count % save_interval == 0:
+        if count % SAVE_INTERVAL == 0:
             temp_df = pd.DataFrame(new_predictions)
             pred_df = pd.concat([pred_df, temp_df], ignore_index=True)
             save_predictions(pred_df, output_filename)
@@ -137,7 +150,7 @@ def main(model: str, num_tries: int = 5, save_interval: int = 10):
     print(f"Total new comments processed: {count}")
 
 if __name__ == '__main__':
-    model_name  = [
+    models  = [
         'deepseek-r1:1.5b',
         'stablelm2',
         'llama3.1',
@@ -148,5 +161,6 @@ if __name__ == '__main__':
         'llama2:13b',
         'vicuna',
         'falcon'
-    ][3]
-    main(model_name, num_tries=5, save_interval=5)
+    ]
+
+    main(models[3])
