@@ -134,7 +134,7 @@ def main(model:str, df_interval:list=[None,None]):
     for idx, row in remaining_df.iterrows():
         prediction = process_comment(row, model, TOTAL_LLM_TRIES)
         new_predictions.append(prediction)
-        print(f"[{idx+1}/{SAVE_INTERVAL}] {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['classification']} ({int(prediction['prediction_time'])}s/{int(prediction['tries'])}t)")
+        print(f"[{idx+1}/{int(row_end-row_start+1)}] {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['classification']} ({int(prediction['prediction_time'])}s/{int(prediction['tries'])}t)")
         count += 1
         
         if count % SAVE_INTERVAL == 0:
