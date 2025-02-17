@@ -4,5 +4,6 @@
 *.zip
 *.txt
 *.png
+*.tgz
 temp*
 venv/

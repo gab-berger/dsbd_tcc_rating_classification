@@ -7,18 +7,34 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-def generate_prompt_rating(pros, cons):
+def load_data(output_filename:str) -> pd.DataFrame:
+    print('Loading comments.parquet...', end=' ')
+    comments_df = pd.read_parquet('comments.parquet')
+    print('loaded!')
+
+    print(f'Loading {output_filename}...', end=' ')
+    pred_df = load_existing_predictions(output_filename)
+    print(f'loaded!')
+
+    print('Filtering out already analyzed comments...', end=' ')
+    analyzed_ids = set(pred_df['id'].unique())
+    remaining_df = comments_df[~comments_df['id'].isin(analyzed_ids)]
+    print('done!')
+
+    return remaining_df
+
+def generate_prompt_rating(pros:str, cons:str) -> str:
     return f"""Evaluate the following employee feedback and determine the overall rating based on the provided pros and cons:
 
 Pros: {pros}
 Cons: {cons}
 
 Rating scale (1 to 5):
-    - 1: Very poor experience
-    - 2: Below average experience
+    - 1: Extremely negative experience
+    - 2: Negative experience
     - 3: Neutral or mixed experience
-    - 4: Good experience
-    - 5: Excellent experience
+    - 4: Positive experience
+    - 5: Extremely positive experience
 
 Output requirements:
     - Respond with ONLY a single character: '1', '2', '3', '4', or '5'.
@@ -84,20 +100,9 @@ def save_predictions(pred_df: pd.DataFrame, output_filename: str):
     print(f"Predictions saved to {output_filename}")
 
 def main(model: str, num_tries: int = 5, save_interval: int = 10):
-    print('Loading comments.parquet...')
-    comments_df = pd.read_parquet('comments.parquet')
-    print('comments.parquet loaded!')
+    output_filename = f"pred_{model}.parquet" 
+    remaining_df = load_data(output_filename)
 
-    output_filename = f"pred_{model}.parquet"
-    print(f'Loading {output_filename}...')
-    pred_df = load_existing_predictions(output_filename)
-    print(f'{output_filename} loaded!')
-
-    print('Filtering out already analyzed comments...')
-    analyzed_ids = set(pred_df['id'].unique())
-    remaining_df = comments_df[~comments_df['id'].isin(analyzed_ids)]
-    print('Analyzed comments filtered out!')
-    
     print(f"Starting predictions with model {model}...")
     new_predictions = []
     count = 0
@@ -105,7 +110,7 @@ def main(model: str, num_tries: int = 5, save_interval: int = 10):
     for idx, row in remaining_df.iterrows():
         prediction = process_comment(row, model, num_tries)
         new_predictions.append(prediction)
-        print(f"({idx+1}/{save_interval}) Comment {row['id'][0:4]}...{row['id'][-5:-1]} done! Prediction: {prediction['classification']} [{round(prediction['prediction_time'],0)}s]")
+        print(f"[{idx+1}/{save_interval}] Comment {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['classification']} ({int(prediction['prediction_time'])}s)")
         count += 1
         
         if count % save_interval == 0:
@@ -129,5 +134,5 @@ if __name__ == '__main__':
         'deepseek-r1:8b', #8b
         'llama3.1', #8b
         'stablelm2:12b' #12b
-    ][1]
+    ][2]
     main(model_name, num_tries=5, save_interval=5)
