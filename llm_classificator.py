@@ -119,7 +119,7 @@ def save_predictions(pred_df: pd.DataFrame, output_filename: str):
     print(f"Predictions saved to {output_filename} ({elapsed_time}s)")
 
 def main(model:str, df_interval:list=[None,None]):
-    SAVE_INTERVAL = 10
+    SAVE_INTERVAL = 5
     TOTAL_LLM_TRIES = 5
 
     row_start, row_end = df_interval
