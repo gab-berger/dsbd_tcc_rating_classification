@@ -126,7 +126,7 @@ def main(model:str, df_interval:list=[None,None]):
     output_filename = f"pred_{model}.parquet" 
     remaining_df, pred_df = load_data(output_filename, row_start, row_end)
 
-    print(f"Starting predictions with model {model}...")
+    print(f"Starting predictions with model {model}... [{row_start} -> {row_end}]")
     new_predictions = []
     count = 0
     
@@ -146,8 +146,6 @@ def main(model:str, df_interval:list=[None,None]):
         temp_df = pd.DataFrame(new_predictions)
         pred_df = pd.concat([pred_df, temp_df], ignore_index=True)
         save_predictions(pred_df, output_filename)
-    
-    print(f"Total new comments processed: {count}")
 
 if __name__ == '__main__':
     models  = [
@@ -159,8 +157,9 @@ if __name__ == '__main__':
         'stablelm2:12b',
         'llama2:7b',
         'llama2:13b',
-        'vicuna',
-        'falcon'
+        #'vicuna',
+        #'falcon'
     ]
-
-    main(models[3])
+    for n in range(0, 1000, 100):
+        main(models[3], [n, n+99])
+    print('All work done! :)')
