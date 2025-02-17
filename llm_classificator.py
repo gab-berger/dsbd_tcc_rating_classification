@@ -37,7 +37,7 @@ def load_data(output_filename:str) -> pd.DataFrame:
     return remaining_df, pred_df
 
 def generate_prompt_rating(pros:str, cons:str) -> str:
-    return f"""Evaluate the following employee feedback and determine the overall rating based on the provided pros and cons:
+    return f"""You are a Sentiment Analysis Specialist, and your goal is to evaluate the following employee feedback and determine the overall rating based on the provided pros and cons:
 
 Pros: {pros}
 Cons: {cons}
@@ -52,9 +52,7 @@ Rating scale (1 to 5):
 Output requirements:
     - Respond with ONLY a single character: '1', '2', '3', '4', or '5'.
     - Do NOT include any explanations, justifications, extra text, or code.
-    - Responses containing anything other than '1', '2', '3', '4', or '5' are INVALID.
     - Your response must be exactly ONE character long.
-    - STRICTLY follow these rules.
 """
 
 def llm_query(prompt: str, model: str) -> int:
@@ -137,14 +135,14 @@ def main(model: str, num_tries: int = 5, save_interval: int = 10):
 
 if __name__ == '__main__':
     model_name  = [
-        # 'deepseek-r1:1.5b',
-        # 'stablelm2',
-        # 'llama3.1',
-        # 'llama3.2',
-        # 'deepseek-r1:8b',
-        # 'stablelm2:12b',
-        # 'llama2:7b',
-        # 'llama2:13b',
+        'deepseek-r1:1.5b',
+        'stablelm2',
+        'llama3.1',
+        'llama3.2',
+        'deepseek-r1:8b',
+        'stablelm2:12b',
+        'llama2:7b',
+        'llama2:13b',
         'vicuna',
         'falcon'
     ][3]
