@@ -116,10 +116,10 @@ def process_comment(comment_row, model: str, num_tries:int) -> dict:
     }
 
 def save_predictions(pred_df: pd.DataFrame, output_filename: str):
-    start_time = time()
+    #start_time = time()
     pred_df.to_parquet(output_filename, index=False)
-    elapsed_time = round(time() - start_time, 2)
-    print(f"Predictions saved to {output_filename} ({elapsed_time}s)")
+    #elapsed_time = round(time() - start_time, 2)
+    #print(f"Predictions saved to {output_filename} ({elapsed_time}s)")
 
 def main(model:str, comments):
     SAVE_INTERVAL = 5
@@ -128,7 +128,7 @@ def main(model:str, comments):
     output_filename = f"data/pred_{model}.parquet" 
     remaining_df, pred_df = filter_to_predict_comments(comments, output_filename)
 
-    print(f"{'='*60}\nStarting predictions with model {model}... [{len(remaining_df)}]\n{'='*60}")
+    print(f"{'='*60}\nStarting predictions with model {model}... [loop:{len(remaining_df)}]\n{'='*60}")
     new_predictions = []
     count = 0
     
@@ -149,7 +149,7 @@ def main(model:str, comments):
         pred_df = pd.concat([pred_df, temp_df], ignore_index=True)
         save_predictions(pred_df, output_filename)
     
-    print(f"{'='*60}\nModel {model} finished predictions! [{len(remaining_df)}]\n{'='*60}")
+    print(f"{'='*60}\nModel {model} finished predictions! [loop:{len(remaining_df)}][total:{len(pred_df)}]\n{'='*60}")
 
 if __name__ == '__main__':
     LOOP_RANGE = 50
