@@ -14,21 +14,24 @@ def load_existing_predictions(output_filename: str) -> {pd.DataFrame}:
     else:
         return pd.DataFrame(columns=['id', 'classification', 'num_tries', 'prediction_time', 'ts_prediction'])
 
-def load_data(output_filename:str, row_start:int=None, row_end:int=None) -> pd.DataFrame:
+def load_comments() -> pd.DataFrame:
     start_time = time()
     print('Loading comments.parquet...')
     comments_df = pd.read_parquet('data/comments.parquet')
-    
+    elapsed_time = int(time() - start_time)
+    print(f'comments.parquet loaded! ({elapsed_time}s)')
+    return comments_df
+
+def slice_comments(comments_df, row_start:int=None, row_end:int=None) -> pd.DataFrame:
     if row_start is None and row_end is None:
         pass
     else:
         if row_end is None:
             row_end = len(comments_df)
         comments_df = comments_df.iloc[row_start:row_end]
-    
-    elapsed_time = int(time() - start_time)
-    print(f'comments.parquet loaded! ({elapsed_time}s)')
+    return comments_df
 
+def filter_to_predict_comments(comments_df, output_filename:str) -> pd.DataFrame:
     start_time = time()
     print(f'Loading {output_filename}...')
     pred_df = load_existing_predictions(output_filename)
@@ -118,23 +121,21 @@ def save_predictions(pred_df: pd.DataFrame, output_filename: str):
     elapsed_time = round(time() - start_time, 2)
     print(f"Predictions saved to {output_filename} ({elapsed_time}s)")
 
-def main(model:str, df_interval:list=[None,None]):
+def main(model:str, comments):
     SAVE_INTERVAL = 5
     TOTAL_LLM_TRIES = 5
 
-    row_start, row_end = df_interval
-
     output_filename = f"data/pred_{model}.parquet" 
-    remaining_df, pred_df = load_data(output_filename, row_start, row_end)
+    remaining_df, pred_df = filter_to_predict_comments(comments, output_filename)
 
-    print(f"{'='*60}\nStarting predictions with model {model}... [{row_start} -> {row_end}]\n{'='*60}")
+    print(f"{'='*60}\nStarting predictions with model {model}... [{len(remaining_df)}]\n{'='*60}")
     new_predictions = []
     count = 0
     
     for idx, row in remaining_df.iterrows():
         prediction = process_comment(row, model, TOTAL_LLM_TRIES)
         new_predictions.append(prediction)
-        print(f"[{idx+1}/{int(row_end-row_start+1)}] {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['classification']} ({int(prediction['prediction_time'])}s/{int(prediction['tries'])}t)")
+        print(f"[{idx+1}/{len(remaining_df)}] {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['classification']} ({int(prediction['prediction_time'])}s/{int(prediction['tries'])}t)")
         count += 1
         
         if count % SAVE_INTERVAL == 0:
@@ -148,9 +149,10 @@ def main(model:str, df_interval:list=[None,None]):
         pred_df = pd.concat([pred_df, temp_df], ignore_index=True)
         save_predictions(pred_df, output_filename)
     
-    print(f"{'='*60}\nModel {model} finished predictions! [{row_start} -> {row_end}]\n{'='*60}")
+    print(f"{'='*60}\nModel {model} finished predictions! [{len(remaining_df)}]\n{'='*60}")
 
 if __name__ == '__main__':
+    LOOP_RANGE = 50
     models  = [
         'deepseek-r1:1.5b',
         'stablelm2',
@@ -163,8 +165,11 @@ if __name__ == '__main__':
         #'vicuna',
         #'falcon'
     ]
-    for n in range(0, 100, 1000):
+
+    all_comments = load_comments()
+    for n in range(0, LOOP_RANGE, 10000):
+        to_predict_comments = slice_comments(all_comments, n, LOOP_RANGE-1)
         for model in models:
-            main(model, [n, n+99])
+            main(model, to_predict_comments)
     
     print('All work done! :)')
