@@ -167,8 +167,8 @@ if __name__ == '__main__':
     ]
 
     all_comments = load_comments()
-    for n in range(0, LOOP_RANGE, 10000):
-        to_predict_comments = slice_comments(all_comments, n, LOOP_RANGE-1)
+    for n in range(0, 200, LOOP_RANGE):
+        to_predict_comments = slice_comments(all_comments, n, n+LOOP_RANGE-1)
         for model in models:
             main(model, to_predict_comments)
     
