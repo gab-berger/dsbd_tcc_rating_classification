@@ -1,5 +1,12 @@
+import os
+import sys
 import subprocess
 import ollama
+
+def create_venv(venv_dir="venv"):
+    print("Creating virtual environment...")
+    subprocess.run([sys.executable, "-m", "venv", venv_dir], check=True)
+    print(f"Virtual environment created at: {venv_dir}")
 
 def download_dataset():
     download_url = 'https://www.kaggle.com/api/v1/datasets/download/davidgauthier/glassdoor-job-reviews-2'
@@ -13,22 +20,25 @@ def download_dataset():
     print('all_reviews.csv downloaded!')
 
 def download_models(models):
-    # Install ollama with: curl -fsSL https://ollama.com/install.sh | sh
     for model in models:
         ollama.pull(model)
         print(f'{model} good to go!')
+
+def main(models):
+    VENV_DIR = "venv"
+    create_venv(VENV_DIR)
+    # download_dataset()
+    download_models(models)
 
 if __name__ == '__main__':
     models = [
         'deepseek-r1:1.5b',
         'stablelm2',
-        'llama3.1',
+        # 'llama3.1',
         'llama3.2',
         'deepseek-r1:8b',
         'stablelm2:12b',
         'llama2:7b',
         'llama2:13b'
     ]
-    
-    download_dataset()
-    download_models(models)
+    main(models)
