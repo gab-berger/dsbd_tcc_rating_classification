@@ -8,6 +8,16 @@ def create_venv(venv_dir="venv"):
     subprocess.run([sys.executable, "-m", "venv", venv_dir], check=True)
     print(f"Virtual environment created at: {venv_dir}")
 
+def install_requirements(venv_dir="venv"):
+    pip_path = os.path.join(venv_dir, "bin", "pip")
+    if os.path.exists("requirements.txt"):
+        print("Installing dependencies from requirements.txt...")
+        subprocess.run([pip_path, "install", "--upgrade", "pip"], check=True)
+        subprocess.run([pip_path, "install", "-r", "requirements.txt"], check=True)
+        print("Dependencies installed successfully.")
+    else:
+        print("requirements.txt not found.")
+
 def download_dataset():
     download_url = 'https://www.kaggle.com/api/v1/datasets/download/davidgauthier/glassdoor-job-reviews-2'
     commands = [
@@ -27,6 +37,7 @@ def download_models(models):
 def main(models):
     VENV_DIR = "venv"
     create_venv(VENV_DIR)
+    install_requirements(VENV_DIR)
     # download_dataset()
     download_models(models)
 
