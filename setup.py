@@ -1,4 +1,5 @@
 import subprocess
+import ollama
 
 def download_dataset():
     download_url = 'https://www.kaggle.com/api/v1/datasets/download/davidgauthier/glassdoor-job-reviews-2'
@@ -13,16 +14,8 @@ def download_dataset():
 
 def download_models(models):
     # Install ollama with: curl -fsSL https://ollama.com/install.sh | sh
-    def model_not_downloaded(model_name):
-        try:
-            result = subprocess.run(["ollama", "list"], capture_output=True, text=True, check=True)
-            return model_name not in result.stdout
-        except subprocess.CalledProcessError:
-            return True
-    
     for model in models:
-        if model_not_downloaded(model):
-            subprocess.run(["ollama","pull",model])
+        ollama.pull(model)
         print(f'{model} good to go!')
 
 if __name__ == '__main__':
@@ -34,9 +27,7 @@ if __name__ == '__main__':
         'deepseek-r1:8b',
         'stablelm2:12b',
         'llama2:7b',
-        'llama2:13b',
-        'vicuna',
-        'falcon'
+        'llama2:13b'
     ]
     
     download_dataset()
