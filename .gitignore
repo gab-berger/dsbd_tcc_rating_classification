@@ -3,6 +3,7 @@
 *.parquet
 *.zip
 *.txt
+!requirements.txt
 *.png
 *.tgz
 temp*
