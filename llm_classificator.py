@@ -1,4 +1,8 @@
 import os
+os.environ['OLLAMA_USE_GPU'] = '1'
+os.environ['OLLAMA_GPU_VENDOR'] = 'AMD'
+os.environ["HSA_OVERRIDE_GFX_VERSION"] = "10.3.0"
+
 import pandas as pd
 from ollama import ChatResponse, chat
 from time import time
@@ -128,7 +132,7 @@ def main(model:str, comments):
     output_filename = f"data/pred_{model}.parquet" 
     remaining_df, pred_df = filter_to_predict_comments(comments, output_filename)
 
-    print(f"{'='*60}\nStarting predictions with model {model}... [loop:{len(remaining_df)}]\n{'='*60}")
+    print(f"{'='*60}\nStarting predictions with model {model}... [loop:{len(remaining_df)}][total:{len(pred_df)}]\n{'='*60}")
     new_predictions = []
     count = 0
     
@@ -152,23 +156,23 @@ def main(model:str, comments):
     print(f"{'='*60}\nModel {model} finished predictions! [loop:{len(remaining_df)}][total:{len(pred_df)}]\n{'='*60}")
 
 if __name__ == '__main__':
-    LOOP_RANGE = 50
+    LOOP_RANGE = 100
     models  = [
-        'deepseek-r1:1.5b',
-        'stablelm2',
-        'llama3.1',
+        # 'deepseek-r1:1.5b',
+        #'stablelm2',
+        #'llama3.1',
         'llama3.2',
-        'deepseek-r1:8b',
-        'llama2:7b',
-        'llama2:13b',
-        'stablelm2:12b',
+        #'deepseek-r1:8b',
+        #'llama2:7b',
+        #'llama2:13b',
+        #'stablelm2:12b',
         #'vicuna',
         #'falcon'
     ]
 
     all_comments = load_comments()
-    for n in range(0, 200, LOOP_RANGE):
-        to_predict_comments = slice_comments(all_comments, n, n+LOOP_RANGE-1)
+    for n in range(0, 10000, LOOP_RANGE):
+        to_predict_comments = slice_comments(all_comments, n, n+LOOP_RANGE)
         for model in models:
             main(model, to_predict_comments)
     
