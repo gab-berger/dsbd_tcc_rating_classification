@@ -156,22 +156,20 @@ def main(model:str, comments):
     print(f"{'='*60}\nModel {model} finished predictions! [loop:{len(remaining_df)}][total:{len(pred_df)}]\n{'='*60}")
 
 if __name__ == '__main__':
-    LOOP_RANGE = 100
+    LOOP_RANGE = 50
     models  = [
-        # 'deepseek-r1:1.5b',
-        #'stablelm2',
-        #'llama3.1',
+        'deepseek-r1:1.5b',
+        'stablelm2',
+        'llama3.1',
         'llama3.2',
-        #'deepseek-r1:8b',
-        #'llama2:7b',
-        #'llama2:13b',
-        #'stablelm2:12b',
-        #'vicuna',
-        #'falcon'
+        'deepseek-r1:8b',
+        'llama2:7b',
+        'llama2:13b',
+        'stablelm2:12b'
     ]
 
     all_comments = load_comments()
-    for n in range(0, 10000, LOOP_RANGE):
+    for n in range(0, 1000, LOOP_RANGE):
         to_predict_comments = slice_comments(all_comments, n, n+LOOP_RANGE)
         for model in models:
             main(model, to_predict_comments)
