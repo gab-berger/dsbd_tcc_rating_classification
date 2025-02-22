@@ -29,6 +29,18 @@ def download_dataset():
         subprocess.run(command)
     print('all_reviews.csv downloaded!')
 
+def setup_ollama():
+    print("Installing or updating Ollama...")
+    try:
+        subprocess.run(
+            "curl -fsSL https://ollama.com/install.sh | sh",
+            shell=True,
+            check=True
+        )
+        print("Ollama installed or updated successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error during Ollama installation: {e}")
+
 def download_models(models):
     for model in models:
         ollama.pull(model)
@@ -38,14 +50,15 @@ def main(models):
     VENV_DIR = "venv"
     create_venv(VENV_DIR)
     install_requirements(VENV_DIR)
-    # download_dataset()
+    setup_ollama()
     download_models(models)
+    download_dataset()
 
 if __name__ == '__main__':
     models = [
         'deepseek-r1:1.5b',
         'stablelm2',
-        # 'llama3.1',
+        'llama3.1',
         'llama3.2',
         'deepseek-r1:8b',
         'stablelm2:12b',
