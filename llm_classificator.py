@@ -16,7 +16,7 @@ def load_existing_predictions(output_filename: str) -> {pd.DataFrame}:
     if os.path.exists(output_filename):
         return pd.read_parquet(output_filename)
     else:
-        return pd.DataFrame(columns=['id', 'classification', 'num_tries', 'prediction_time', 'ts_prediction'])
+        return pd.DataFrame(columns=['id', 'rating', 'tries', 'prediction_time', 'ts_prediction'])
 
 def load_comments() -> pd.DataFrame:
     start_time = time()
@@ -113,7 +113,7 @@ def process_comment(comment_row, model: str, num_tries:int) -> dict:
     
     return {
         'id': comment_row['id'],
-        'classification': most_common_rating if ratings else None,
+        'rating': most_common_rating if ratings else None,
         'tries': tries,
         'prediction_time': elapsed_time,
         'ts_prediction': ts_prediction
@@ -139,7 +139,7 @@ def main(model:str, comments):
     for idx, row in remaining_df.iterrows():
         prediction = process_comment(row, model, TOTAL_LLM_TRIES)
         new_predictions.append(prediction)
-        print(f"[{idx+1}/{len(remaining_df)}] {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['classification']} ({int(prediction['prediction_time'])}s/{int(prediction['tries'])}t)")
+        print(f"[{idx+1}/{len(remaining_df)}] {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['rating']} ({int(prediction['prediction_time'])}s/{int(prediction['tries'])}t)")
         count += 1
         
         if count % SAVE_INTERVAL == 0:
@@ -169,7 +169,7 @@ if __name__ == '__main__':
     ]
 
     all_comments = load_comments()
-    for n in range(0, 1000, LOOP_RANGE):
+    for n in range(0, 15000, LOOP_RANGE):
         to_predict_comments = slice_comments(all_comments, n, n+LOOP_RANGE)
         for model in models:
             main(model, to_predict_comments)

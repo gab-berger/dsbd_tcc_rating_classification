@@ -10,11 +10,11 @@ SAVE_INTERVAL = 10
 
 # Caminhos dos arquivos
 COMMENTS_PATH = "data/comments.parquet"               # Arquivo contendo os comentários
-RATING_PRED_PATH = "data/rating_prediction.parquet"     # Arquivo que armazenará as avaliações do usuário
+RATING_PRED_PATH = "data/pred_manual.parquet"     # Arquivo que armazenará as avaliações do usuário
 
-def load_or_create_rating_prediction(path):
+def load_or_create_pred_manual(path):
     """
-    Carrega o arquivo 'rating_prediction.parquet' se ele existir;
+    Carrega o arquivo 'pred_manual.parquet' se ele existir;
     caso contrário, cria um DataFrame vazio com as colunas necessárias.
     """
     if os.path.exists(path):
@@ -22,7 +22,7 @@ def load_or_create_rating_prediction(path):
         df = pd.read_parquet(path)
     else:
         print(f"Arquivo {path} não encontrado. Criando um novo DataFrame vazio.")
-        df = pd.DataFrame(columns=["comment_id", "rating_prediction", "ts_prediction", "prediction_time"])
+        df = pd.DataFrame(columns=["id", "pred_manual", "ts_prediction", "prediction_time"])
     return df
 
 def load_comments(path):
@@ -39,16 +39,16 @@ def load_comments(path):
 def filter_unrated_comments(comments_df, rating_pred_df):
     """
     Filtra os comentários que ainda não foram avaliados, ou seja,
-    que não possuem seu 'id' presente na coluna 'comment_id' do rating_pred_df.
+    que não possuem seu 'id' presente na coluna 'id' do rating_pred_df.
     """
     if rating_pred_df.empty:
         return comments_df
-    rated_ids = set(rating_pred_df["comment_id"])
+    rated_ids = set(rating_pred_df["id"])
     return comments_df[~comments_df["id"].isin(rated_ids)]
 
 def main():
     # Carrega ou cria a tabela de avaliações e carrega os comentários
-    rating_pred_df = load_or_create_rating_prediction(RATING_PRED_PATH)
+    rating_pred_df = load_or_create_pred_manual(RATING_PRED_PATH)
     comments_df = load_comments(COMMENTS_PATH)
     
     new_entries = []  # Lista para armazenar as avaliações realizadas nesta sessão
@@ -94,10 +94,10 @@ def main():
         
         ts_now = pd.Timestamp.now()
         new_entries.append({
-            "comment_id": comment["id"],
-            "rating_prediction": rating_value,
-            "ts_prediction": ts_now,
-            "prediction_time": prediction_time
+            "id": comment["id"],
+            "rating": rating_value,
+            "prediction_time": prediction_time,
+            "ts_prediction": ts_now
         })
         iteration += 1
         print("Avaliação registrada.")
