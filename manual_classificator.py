@@ -9,8 +9,8 @@ warnings.filterwarnings("ignore")
 SAVE_INTERVAL = 10
 
 # Caminhos dos arquivos
-COMMENTS_PATH = "comments.parquet"               # Arquivo contendo os comentários
-RATING_PRED_PATH = "rating_prediction.parquet"     # Arquivo que armazenará as avaliações do usuário
+COMMENTS_PATH = "data/comments.parquet"               # Arquivo contendo os comentários
+RATING_PRED_PATH = "data/rating_prediction.parquet"     # Arquivo que armazenará as avaliações do usuário
 
 def load_or_create_rating_prediction(path):
     """
