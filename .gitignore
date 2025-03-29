@@ -6,7 +6,7 @@
 !requirements.txt
 *.png
 *.tgz
-temp*
+_*
 venv/
 v1_comment_summarizer/
 data/
