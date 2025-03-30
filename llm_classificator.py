@@ -12,7 +12,10 @@ warnings.filterwarnings("ignore")
 
 def select_eligible_comments() -> pd.DataFrame:
     comments_df = pd.read_parquet('data/comments.parquet')
+    print(f"Comments loaded! ({len(comments_df)} total)")
     manual_predictions = pd.read_parquet('data/manual_predictions.parquet')
+    print(f"Manual predictions loaded! ({len(manual_predictions)} total)")
+    
     return comments_df[comments_df['id'].isin(manual_predictions['id'])]
 
 def select_comments_to_predict(comments_df, llm_predictions, model, temperature) -> pd.DataFrame:
@@ -145,13 +148,12 @@ def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> 
         temperature
     )
 
-    print(f"\n{'='*30} {model} (Temp: {temperature}) {'='*30}")
-    print(f"Comments to process: {len(comments_to_predict)}/{len(eligible_comments_df)}\n")
+    print(f"\n{'='*30} {model} (t:{temperature}) {'='*30}")
 
     batch_size = 5
     predictions = []
     
-    with tqdm(total=len(comments_to_predict), desc="Processing Comments") as pbar:
+    with tqdm(total=len(comments_to_predict), desc="Progress") as pbar:
         for idx, row in comments_to_predict.iterrows():
             try:
                 start_time = time.time()
@@ -169,8 +171,9 @@ def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> 
                     predictions = []
 
                 pbar.set_postfix_str(
-                    f"{row['id'][:8]} "
-                    f"(r:{prediction['rating']} - {prediction['processing_time']:.1f}s)"
+                    f"id:{row['id'][:4]}|"
+                    f"r:{prediction['rating']}|"
+                    f"t:{prediction['processing_time']:.1f}s"
                 )
 
             except Exception as e:
