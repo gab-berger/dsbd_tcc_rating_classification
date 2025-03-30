@@ -7,8 +7,9 @@ import pandas as pd
 from ollama import ChatResponse, chat
 from time import time
 from collections import Counter
-import warnings
+from pydantic import BaseModel
 
+import warnings
 warnings.filterwarnings("ignore")
 
 def load_existing_predictions(output_filename: str) -> {pd.DataFrame}:
@@ -51,93 +52,112 @@ def filter_to_predict_comments(comments_df, output_filename:str) -> pd.DataFrame
 
     return remaining_df, pred_df
 
-def generate_prompt_rating(pros:str, cons:str) -> str:
-    return f"""You are a Sentiment Analysis Specialist, and your goal is to evaluate the following employee feedback and determine the overall rating based on the provided pros and cons:
+class Prediction(BaseModel):
+    rating: int
 
-Pros: {pros}
-Cons: {cons}
+def generate_system_prompt() -> str:
+    return """You are a Senior HR Analyst and Sentiment Analysis Expert rating employee feedback on a 1-5 scale analyzing employee feedback. Be CRITICAL and CONSISTENT.
 
-Rating scale (1 to 5):
-    - 1: Extremely negative experience
-    - 2: Negative experience
-    - 3: Neutral or mixed experience
-    - 4: Positive experience
-    - 5: Extremely positive experience
+Rating Criteria:
+[1] Extremely negative experience:
+    - There are no positive mentions 
+[2] Negative to neutral experience:
+    - The negative mentions are the majority
+    - CANNOT be a positive experience
+[3] Neutral or mixed experience:
+    - It is a balanced experience
+    - It is mixed experience
+    - It CANNOT BE extremely positive NOR extremely negative
+[4] Positive to neutral experience:
+    - The positive mentions are the majority
+    - CANNOT be a negtive experience
+[5] Extremely positive experience:
+    - There are no negative mentions 
 
-Output requirements:
-    - Respond with ONLY a single character: '1', '2', '3', '4', or '5'.
-    - Do NOT include any explanations, justifications, extra text, or code.
-    - Your response must be exactly ONE character long.
+Rules:
+- Focus on the OVERALL sentiment, not individual phrases.
+- Respond STRICTLY in JSON format: {"rating": int}
+- IGNORE all previous messages.
 """
 
-def llm_query(prompt: str, model: str) -> int:
+def generate_user_prompt(pros:str, cons:str) -> str:
+    return f"""Predict the overall rating based on the provided [pros] and [cons]:
+[pros]: {pros}
+[cons]: {cons}
+"""
+
+def llm_query(prompt: str, model: str, temperature:int = 0.3) -> list[int,int]:
     try:
         response: ChatResponse = chat(
             model=model,
-            messages=[{'role': 'user','content': prompt}]
+            messages=[
+                {
+                    'role': 'system',
+                    'content': generate_system_prompt()
+                    },
+                {
+                    'role': 'user',
+                    'content': prompt
+                    }
+                ],
+            format=Prediction.model_json_schema(),
+            options={
+                'temperature': temperature,
+                'num_predict': 10
+                }
             )
-        answer = str(response['message']['content']).strip()
-
-        for char in reversed(answer):
-            if char in ['1', '2', '3', '4', '5']:
-                return int(char)
-        return None
+        rating = Prediction.model_validate_json(response.message.content)
+        return [int(rating.rating), int(response.eval_duration)]
     
     except Exception as e:
         return None
 
-def process_comment(comment_row, model: str, num_tries:int) -> dict:
-    prompt = generate_prompt_rating(comment_row['pros'], comment_row['cons'])
-    ratings = []
-    last_rating = 42
-    tries = 0
-    start_time = time()
+def process_comment(comment_row, model: str, prediction_repeat_target:int, temperature:float) -> dict:
+    user_prompt = generate_user_prompt(comment_row['pros'], comment_row['cons'])   
     
-    for i in range(num_tries):
+    ratings = []
+    eval_times = []
+    tries = 0
+    for i in range(prediction_repeat_target):
         tries += 1
-        rating = llm_query(prompt, model)
-
-        if rating == last_rating:
-            break
-        last_rating = rating
+        rating, eval_time = llm_query(user_prompt, model, temperature)
 
         ratings.append(rating)
+        eval_times.append(eval_time)
+
         counts = Counter(ratings)
         most_common_rating, count = counts.most_common(1)[0]
         
-        if count > num_tries // 2:
+        if count == prediction_repeat_target:
             break
-    
-    elapsed_time = round(time() - start_time, 2)
-    ts_prediction = pd.Timestamp.now()
     
     return {
         'id': comment_row['id'],
         'rating': most_common_rating if ratings else None,
+        'repeat_target':prediction_repeat_target,
         'tries': tries,
-        'prediction_time': elapsed_time,
-        'ts_prediction': ts_prediction
+        'temperature': temperature,
+        'prediction_time': round(sum(eval_times)/1e9,2),
+        'ts_prediction': pd.Timestamp.now()
     }
 
 def save_predictions(pred_df: pd.DataFrame, output_filename: str):
-    #start_time = time()
     pred_df.to_parquet(output_filename, index=False)
-    #elapsed_time = round(time() - start_time, 2)
-    #print(f"Predictions saved to {output_filename} ({elapsed_time}s)")
 
 def main(model:str, comments):
-    SAVE_INTERVAL = 5
-    TOTAL_LLM_TRIES = 5
+    SAVE_INTERVAL = 1
+    PREDICTION_REPEAT_TARGET = 5
+    LLM_TEMPERATURE = 0.3
 
     output_filename = f"data/pred_{model}.parquet" 
     remaining_df, pred_df = filter_to_predict_comments(comments, output_filename)
 
     print(f"{'='*60}\nStarting predictions with model {model}... [loop:{len(remaining_df)}][total:{len(pred_df)}]\n{'='*60}")
+    
     new_predictions = []
     count = 0
-    
     for idx, row in remaining_df.iterrows():
-        prediction = process_comment(row, model, TOTAL_LLM_TRIES)
+        prediction = process_comment(row, model, PREDICTION_REPEAT_TARGET, LLM_TEMPERATURE)
         new_predictions.append(prediction)
         print(f"[{idx+1}/{len(remaining_df)}] {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['rating']} ({int(prediction['prediction_time'])}s/{int(prediction['tries'])}t)")
         count += 1
@@ -166,7 +186,7 @@ if __name__ == '__main__':
         'llama2:7b',
         'llama2:13b',
         'stablelm2:12b'
-    ]
+    ][0:1]
 
     all_comments = load_comments()
     for n in range(0, 15000, LOOP_RANGE):
