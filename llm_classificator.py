@@ -1,92 +1,67 @@
 import os
-os.environ['OLLAMA_USE_GPU'] = '1'
-os.environ['OLLAMA_GPU_VENDOR'] = 'AMD'
-os.environ["HSA_OVERRIDE_GFX_VERSION"] = "10.3.0"
-
 import pandas as pd
+import time
 from ollama import ChatResponse, chat
-from time import time
 from collections import Counter
 from pydantic import BaseModel
+from typing import Dict, Any
+from tqdm import tqdm
 
 import warnings
 warnings.filterwarnings("ignore")
 
-def load_existing_predictions(output_filename: str) -> {pd.DataFrame}:
-    output_filename = output_filename
-    if os.path.exists(output_filename):
-        return pd.read_parquet(output_filename)
-    else:
-        return pd.DataFrame(columns=['id', 'rating', 'tries', 'prediction_time', 'ts_prediction'])
-
-def load_comments() -> pd.DataFrame:
-    start_time = time()
-    print('Loading comments.parquet...')
+def select_eligible_comments() -> pd.DataFrame:
     comments_df = pd.read_parquet('data/comments.parquet')
-    elapsed_time = int(time() - start_time)
-    print(f'comments.parquet loaded! ({elapsed_time}s)')
-    return comments_df
+    manual_predictions = pd.read_parquet('data/manual_predictions.parquet')
+    return comments_df[comments_df['id'].isin(manual_predictions['id'])]
 
-def slice_comments(comments_df, row_start:int=None, row_end:int=None) -> pd.DataFrame:
-    if row_start is None and row_end is None:
-        pass
-    else:
-        if row_end is None:
-            row_end = len(comments_df)
-        comments_df = comments_df.iloc[row_start:row_end]
-    return comments_df
+def select_comments_to_predict(comments_df, llm_predictions, model, temperature) -> pd.DataFrame:
+    processed_ids = llm_predictions[
+        (llm_predictions['model'] == model) & 
+        (llm_predictions['temperature'] == temperature)
+    ]['id']
+    
+    unprocessed_comments = comments_df[
+        ~comments_df['id'].isin(processed_ids)
+    ]
 
-def filter_to_predict_comments(comments_df, output_filename:str) -> pd.DataFrame:
-    start_time = time()
-    print(f'Loading {output_filename}...')
-    pred_df = load_existing_predictions(output_filename)
-    elapsed_time = round(time() - start_time, 2)
-    print(f'{output_filename} loaded! ({elapsed_time}s)')
+    return unprocessed_comments
 
-    start_time = time()
-    print('Filtering out already analyzed comments...')
-    analyzed_ids = set(pred_df['id'].unique())
-    remaining_df = comments_df[~comments_df['id'].isin(analyzed_ids)]
-    elapsed_time = round(time() - start_time, 2)
-    print(f'Filtering done! ({elapsed_time}s)')
+def llm_query(comment_row:pd.DataFrame, model:str, temperature:int = 0.3) -> list[int,int]:
+    class Prediction(BaseModel):
+        rating: int
 
-    return remaining_df, pred_df
+    def generate_system_prompt() -> str:
+        return """You are a Senior HR Analyst and Sentiment Analysis Expert rating employee feedback on a 1-5 scale analyzing employee feedback. Be CRITICAL and CONSISTENT.
 
-class Prediction(BaseModel):
-    rating: int
+    Rating Criteria:
+    [1] Extremely negative experience:
+        - There are no positive mentions 
+    [2] Negative to neutral experience:
+        - The negative mentions are the majority
+        - CANNOT be a positive experience
+    [3] Neutral or mixed experience:
+        - It is a balanced experience
+        - It is mixed experience
+        - It CANNOT BE extremely positive NOR extremely negative
+    [4] Positive to neutral experience:
+        - The positive mentions are the majority
+        - CANNOT be a negtive experience
+    [5] Extremely positive experience:
+        - There are no negative mentions 
 
-def generate_system_prompt() -> str:
-    return """You are a Senior HR Analyst and Sentiment Analysis Expert rating employee feedback on a 1-5 scale analyzing employee feedback. Be CRITICAL and CONSISTENT.
+    Rules:
+    - Focus on the OVERALL sentiment, not individual phrases.
+    - Respond STRICTLY in JSON format: {"rating": int}
+    - IGNORE all previous messages.
+    """
 
-Rating Criteria:
-[1] Extremely negative experience:
-    - There are no positive mentions 
-[2] Negative to neutral experience:
-    - The negative mentions are the majority
-    - CANNOT be a positive experience
-[3] Neutral or mixed experience:
-    - It is a balanced experience
-    - It is mixed experience
-    - It CANNOT BE extremely positive NOR extremely negative
-[4] Positive to neutral experience:
-    - The positive mentions are the majority
-    - CANNOT be a negtive experience
-[5] Extremely positive experience:
-    - There are no negative mentions 
-
-Rules:
-- Focus on the OVERALL sentiment, not individual phrases.
-- Respond STRICTLY in JSON format: {"rating": int}
-- IGNORE all previous messages.
-"""
-
-def generate_user_prompt(pros:str, cons:str) -> str:
-    return f"""Predict the overall rating based on the provided [pros] and [cons]:
-[pros]: {pros}
-[cons]: {cons}
-"""
-
-def llm_query(prompt: str, model: str, temperature:int = 0.3) -> list[int,int]:
+    def generate_user_prompt(pros:str, cons:str) -> str:
+        return f"""Predict the overall rating based on the provided [pros] and [cons]:
+    [pros]: {pros}
+    [cons]: {cons}
+    """
+  
     try:
         response: ChatResponse = chat(
             model=model,
@@ -97,12 +72,13 @@ def llm_query(prompt: str, model: str, temperature:int = 0.3) -> list[int,int]:
                     },
                 {
                     'role': 'user',
-                    'content': prompt
+                    'content': generate_user_prompt(comment_row['pros'], comment_row['cons'])  
                     }
                 ],
             format=Prediction.model_json_schema(),
             options={
                 'temperature': temperature,
+                'seed': 42,
                 'num_predict': 10
                 }
             )
@@ -112,15 +88,16 @@ def llm_query(prompt: str, model: str, temperature:int = 0.3) -> list[int,int]:
     except Exception as e:
         return None
 
-def process_comment(comment_row, model: str, prediction_repeat_target:int, temperature:float) -> dict:
-    user_prompt = generate_user_prompt(comment_row['pros'], comment_row['cons'])   
+def predict_rating(comment_row, model: str, temperature:float) -> dict:
+    prediction_repeat_target = int(1 + temperature*10)
     
     ratings = []
     eval_times = []
+    count = 0
     tries = 0
-    for i in range(prediction_repeat_target):
+    while count < prediction_repeat_target:
         tries += 1
-        rating, eval_time = llm_query(user_prompt, model, temperature)
+        rating, eval_time = llm_query(comment_row, model, temperature)
 
         ratings.append(rating)
         eval_times.append(eval_time)
@@ -133,50 +110,74 @@ def process_comment(comment_row, model: str, prediction_repeat_target:int, tempe
     
     return {
         'id': comment_row['id'],
-        'rating': most_common_rating if ratings else None,
-        'repeat_target':prediction_repeat_target,
-        'tries': tries,
+        'model': model,
         'temperature': temperature,
+        'rating': most_common_rating if ratings else None,
+        'all_predictions': ratings,
+        'tries': tries,
+        'repeat_target': prediction_repeat_target,
         'prediction_time': round(sum(eval_times)/1e9,2),
         'ts_prediction': pd.Timestamp.now()
     }
 
-def save_predictions(pred_df: pd.DataFrame, output_filename: str):
-    pred_df.to_parquet(output_filename, index=False)
+def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> None:
+    LLM_PREDICTIONS_PATH = 'data/llm_predictions.parquet'
 
-def main(model:str, comments):
-    SAVE_INTERVAL = 1
-    PREDICTION_REPEAT_TARGET = 5
-    LLM_TEMPERATURE = 0.3
+    try:
+        existing_predictions = pd.read_parquet(LLM_PREDICTIONS_PATH)
+    except FileNotFoundError:
+        existing_predictions = pd.DataFrame(columns=[
+            'id',
+            'model', 
+            'temperature',
+            'rating',
+            'all_predictions',
+            'tries',
+            'repeat_target',
+            'prediction_time',
+            'ts_prediction'
+        ])
 
-    output_filename = f"data/pred_{model}.parquet" 
-    remaining_df, pred_df = filter_to_predict_comments(comments, output_filename)
+    comments_to_predict = select_comments_to_predict(
+        eligible_comments_df, 
+        existing_predictions, 
+        model, 
+        temperature
+    )
 
-    print(f"{'='*60}\nStarting predictions with model {model}... [loop:{len(remaining_df)}][total:{len(pred_df)}]\n{'='*60}")
+    print(f"\n{'='*30} {model} (Temp: {temperature}) {'='*30}")
+    print(f"Comments to process: {len(comments_to_predict)}/{len(eligible_comments_df)}\n")
+
+    batch_size = 5
+    predictions = []
     
-    new_predictions = []
-    count = 0
-    for idx, row in remaining_df.iterrows():
-        prediction = process_comment(row, model, PREDICTION_REPEAT_TARGET, LLM_TEMPERATURE)
-        new_predictions.append(prediction)
-        print(f"[{idx+1}/{len(remaining_df)}] {row['id'][:4]}...{row['id'][-5:]} done! Prediction: {prediction['rating']} ({int(prediction['prediction_time'])}s/{int(prediction['tries'])}t)")
-        count += 1
-        
-        if count % SAVE_INTERVAL == 0:
-            temp_df = pd.DataFrame(new_predictions)
-            pred_df = pd.concat([pred_df, temp_df], ignore_index=True)
-            save_predictions(pred_df, output_filename)
-            new_predictions = []
-    
-    if new_predictions:
-        temp_df = pd.DataFrame(new_predictions)
-        pred_df = pd.concat([pred_df, temp_df], ignore_index=True)
-        save_predictions(pred_df, output_filename)
-    
-    print(f"{'='*60}\nModel {model} finished predictions! [loop:{len(remaining_df)}][total:{len(pred_df)}]\n{'='*60}")
+    with tqdm(total=len(comments_to_predict), desc="Processing Comments") as pbar:
+        for idx, row in comments_to_predict.iterrows():
+            try:
+                start_time = time.time()
+                
+                prediction = predict_rating(row, model, temperature)
+                prediction['processing_time'] = time.time() - start_time
+                
+                predictions.append(prediction)
+                pbar.update(1)
+
+                if (idx + 1) % batch_size == 0 or (idx + 1) == len(comments_to_predict):
+                    new_predictions_df = pd.DataFrame(predictions)
+                    updated_predictions = pd.concat([existing_predictions, new_predictions_df], ignore_index=True)
+                    updated_predictions.to_parquet(LLM_PREDICTIONS_PATH)
+                    predictions = []
+
+                pbar.set_postfix_str(
+                    f"{row['id'][:8]} "
+                    f"(r:{prediction['rating']} - {prediction['processing_time']:.1f}s)"
+                )
+
+            except Exception as e:
+                print(f"\nErro no comentário ID {row['id']}: {str(e)}")
+                continue
 
 if __name__ == '__main__':
-    LOOP_RANGE = 50
     models  = [
         'deepseek-r1:1.5b',
         'stablelm2',
@@ -186,12 +187,16 @@ if __name__ == '__main__':
         'llama2:7b',
         'llama2:13b',
         'stablelm2:12b'
-    ][0:1]
+    ]
 
-    all_comments = load_comments()
-    for n in range(0, 15000, LOOP_RANGE):
-        to_predict_comments = slice_comments(all_comments, n, n+LOOP_RANGE)
-        for model in models:
-            main(model, to_predict_comments)
-    
-    print('All work done! :)')
+    temperatures = [
+        0.1,
+        0.3,
+        0.5,
+        0.8
+    ]
+
+    eligible_comments_df = select_eligible_comments()
+    for model in models[0:1]:
+        for temperature in temperatures:
+            main(eligible_comments_df, model, temperature)
