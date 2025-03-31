@@ -165,14 +165,14 @@ def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> 
                 pbar.update(1)
 
                 if (idx + 1) % batch_size == 0 or (idx + 1) == len(comments_to_predict):
+                    existing_predictions = pd.read_parquet(LLM_PREDICTIONS_PATH)
                     new_predictions_df = pd.DataFrame(predictions)
                     updated_predictions = pd.concat([existing_predictions, new_predictions_df], ignore_index=True)
                     updated_predictions.to_parquet(LLM_PREDICTIONS_PATH)
                     predictions = []
 
                 pbar.set_postfix_str(
-                    f"id:{row['id'][:4]}|"
-                    f"r:{prediction['rating']}|"
+                    f"loops:{prediction['tries']}|"
                     f"t:{prediction['processing_time']:.1f}s"
                 )
 
@@ -183,13 +183,13 @@ def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> 
 if __name__ == '__main__':
     models  = [
         'deepseek-r1:1.5b',
-        'stablelm2',
-        'llama3.1',
-        'llama3.2',
-        'deepseek-r1:8b',
-        'llama2:7b',
         'llama2:13b',
-        'stablelm2:12b'
+        'llama3.2',
+        'llama3.1',
+        'stablelm2:12b',
+        'llama2:7b',
+        'stablelm2',
+        'deepseek-r1:8b'
     ]
 
     temperatures = [
@@ -200,6 +200,7 @@ if __name__ == '__main__':
     ]
 
     eligible_comments_df = select_eligible_comments()
+    
     for model in models[0:1]:
         for temperature in temperatures:
-            main(eligible_comments_df, model, temperature)
+            main(eligible_comments_df.iloc, model, temperature)
