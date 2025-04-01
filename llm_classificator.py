@@ -152,12 +152,10 @@ def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> 
         temperature
     )
 
-    print(f"\n{'='*30} {model} (t:{temperature}) {'='*30}")
-
     batch_size = 5
     predictions = []
     
-    with tqdm(total=len(comments_to_predict), desc="Progress") as pbar:
+    with tqdm(total=len(comments_to_predict), desc=f"{model}_t{temperature}") as pbar:
         for idx, row in comments_to_predict.iterrows():
             try:
                 start_time = time.time()
@@ -176,8 +174,8 @@ def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> 
                     predictions = []
 
                 pbar.set_postfix_str(
-                    f"loops:{prediction['tries']}|"
-                    f"t:{prediction['processing_time']:.1f}s"
+                    f"tries:{prediction['tries']}|"
+                    f"time:{prediction['prediction_time']:.1f}s"
                 )
 
             except Exception as e:
@@ -207,4 +205,4 @@ if __name__ == '__main__':
     
     for model in models:
         for temperature in temperatures:
-            main(eligible_comments_df.iloc[0:300], model, temperature)
+            main(eligible_comments_df.iloc[0:250], model, temperature)
