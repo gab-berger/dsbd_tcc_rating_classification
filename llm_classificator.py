@@ -92,7 +92,7 @@ def llm_query(comment_row:pd.DataFrame, model:str, temperature:int = 0.3) -> lis
         return None
 
 def predict_rating(comment_row, model: str, temperature:float) -> dict:
-    prediction_repeat_target = int(1 + temperature*10)
+    prediction_repeat_target = max(int(temperature*10),1)
     
     ratings = []
     total_eval_times = []
