@@ -95,15 +95,15 @@ def predict_rating(comment_row, model: str, temperature:float) -> dict:
     prediction_repeat_target = max(int(temperature*10),1)
     
     ratings = []
-    total_eval_times = []
+    prediction_times = []
     count = 0
     tries = 0
     while count < prediction_repeat_target:
         tries += 1
-        rating, total_eval_time = llm_query(comment_row, model, temperature)
+        rating, prediction_time = llm_query(comment_row, model, temperature)
 
         ratings.append(rating)
-        total_eval_times.append(total_eval_time)
+        prediction_times.append(prediction_time)
 
         counts = Counter(ratings)
         most_common_rating, count = counts.most_common(1)[0]
