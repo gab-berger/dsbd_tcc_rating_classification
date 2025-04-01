@@ -86,7 +86,7 @@ def llm_query(comment_row:pd.DataFrame, model:str, temperature:int = 0.3) -> lis
                 }
             )
         rating = Prediction.model_validate_json(response.message.content)
-        return [int(rating.rating), int(response.eval_duration+response.prompt_eval_duration)]
+        return [int(rating.rating), int(response.eval_duration+response.prompt_eval_duration), response]
     
     except Exception as e:
         return None
@@ -96,14 +96,16 @@ def predict_rating(comment_row, model: str, temperature:float) -> dict:
     
     ratings = []
     prediction_times = []
+    responses = []
     count = 0
     tries = 0
     while count < prediction_repeat_target:
         tries += 1
-        rating, prediction_time = llm_query(comment_row, model, temperature)
+        rating, prediction_time, response = llm_query(comment_row, model, temperature)
 
         ratings.append(rating)
         prediction_times.append(prediction_time)
+        responses.append(response)
 
         counts = Counter(ratings)
         most_common_rating, count = counts.most_common(1)[0]
@@ -119,8 +121,9 @@ def predict_rating(comment_row, model: str, temperature:float) -> dict:
         'all_predictions': ratings,
         'tries': tries,
         'repeat_target': prediction_repeat_target,
-        'prediction_time': sum(total_eval_times)/1e9,
-        'ts_prediction': pd.Timestamp.now()
+        'prediction_time': sum(prediction_times)/1e9,
+        'ts_prediction': pd.Timestamp.now(),
+        'llm_outputs': responses
     }
 
 def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> None:
@@ -131,15 +134,16 @@ def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> 
     except FileNotFoundError:
         existing_predictions = pd.DataFrame(columns=[
             'id',
-            'model', 
+            'model',
             'temperature',
             'rating',
             'all_predictions',
             'tries',
             'repeat_target',
             'prediction_time',
-            'ts_prediction'
-        ])
+            'ts_prediction',
+            'llm_outputs'
+            ])
 
     comments_to_predict = select_comments_to_predict(
         eligible_comments_df, 
