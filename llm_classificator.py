@@ -86,7 +86,7 @@ def llm_query(comment_row:pd.DataFrame, model:str, temperature:int = 0.3) -> lis
                 }
             )
         rating = Prediction.model_validate_json(response.message.content)
-        return [int(rating.rating), int(response.eval_duration)]
+        return [int(rating.rating), int(response.eval_duration+response.prompt_eval_duration)]
     
     except Exception as e:
         return None
@@ -95,15 +95,15 @@ def predict_rating(comment_row, model: str, temperature:float) -> dict:
     prediction_repeat_target = int(1 + temperature*10)
     
     ratings = []
-    eval_times = []
+    total_eval_times = []
     count = 0
     tries = 0
     while count < prediction_repeat_target:
         tries += 1
-        rating, eval_time = llm_query(comment_row, model, temperature)
+        rating, total_eval_time = llm_query(comment_row, model, temperature)
 
         ratings.append(rating)
-        eval_times.append(eval_time)
+        total_eval_times.append(total_eval_time)
 
         counts = Counter(ratings)
         most_common_rating, count = counts.most_common(1)[0]
@@ -119,7 +119,7 @@ def predict_rating(comment_row, model: str, temperature:float) -> dict:
         'all_predictions': ratings,
         'tries': tries,
         'repeat_target': prediction_repeat_target,
-        'prediction_time': round(sum(eval_times)/1e9,2),
+        'prediction_time': sum(total_eval_times)/1e9,
         'ts_prediction': pd.Timestamp.now()
     }
 
@@ -201,6 +201,6 @@ if __name__ == '__main__':
 
     eligible_comments_df = select_eligible_comments()
     
-    for model in models[0:1]:
+    for model in models:
         for temperature in temperatures:
-            main(eligible_comments_df.iloc, model, temperature)
+            main(eligible_comments_df.iloc[0:300], model, temperature)
