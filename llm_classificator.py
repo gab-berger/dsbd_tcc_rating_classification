@@ -19,14 +19,17 @@ def select_eligible_comments() -> pd.DataFrame:
     return comments_df[comments_df['id'].isin(manual_predictions['id'])]
 
 def select_comments_to_predict(comments_df, llm_predictions, model, temperature) -> pd.DataFrame:
-    processed_ids = llm_predictions[
-        (llm_predictions['model'] == model) & 
-        (llm_predictions['temperature'] == temperature)
-    ]['id']
-    
-    unprocessed_comments = comments_df[
-        ~comments_df['id'].isin(processed_ids)
-    ]
+    if len(llm_predictions) > 0:
+        processed_ids = llm_predictions[
+            (llm_predictions['model'] == model) & 
+            (llm_predictions['temperature'] == temperature)
+        ]['id']
+        
+        unprocessed_comments = comments_df[
+            ~comments_df['id'].isin(processed_ids)
+        ]
+    else:
+        unprocessed_comments = comments_df
 
     return unprocessed_comments
 
@@ -132,18 +135,7 @@ def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> 
     try:
         existing_predictions = pd.read_parquet(LLM_PREDICTIONS_PATH)
     except FileNotFoundError:
-        existing_predictions = pd.DataFrame(columns=[
-            'id',
-            'model',
-            'temperature',
-            'rating',
-            'all_predictions',
-            'tries',
-            'repeat_target',
-            'prediction_time',
-            'ts_prediction',
-            'llm_outputs'
-            ])
+        existing_predictions = pd.DataFrame()
 
     comments_to_predict = select_comments_to_predict(
         eligible_comments_df, 
@@ -167,10 +159,13 @@ def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> 
                 pbar.update(1)
 
                 if (idx + 1) % batch_size == 0 or (idx + 1) == len(comments_to_predict):
-                    existing_predictions = pd.read_parquet(LLM_PREDICTIONS_PATH)
                     new_predictions_df = pd.DataFrame(predictions)
-                    updated_predictions = pd.concat([existing_predictions, new_predictions_df], ignore_index=True)
-                    updated_predictions.to_parquet(LLM_PREDICTIONS_PATH)
+                    try:
+                        existing_predictions = pd.read_parquet(LLM_PREDICTIONS_PATH)
+                        updated_predictions = pd.concat([existing_predictions, new_predictions_df], ignore_index=True)
+                        updated_predictions.to_parquet(LLM_PREDICTIONS_PATH)
+                    except FileNotFoundError:
+                        updated_predictions = new_predictions_df
                     predictions = []
 
                 pbar.set_postfix_str(
