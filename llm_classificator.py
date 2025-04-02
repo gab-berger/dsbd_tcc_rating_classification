@@ -180,15 +180,18 @@ def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> 
 
 if __name__ == '__main__':
     models  = [
+        'qwen2.5:0.5b',
         'deepseek-r1:1.5b',
-        'llama2:13b',
-        'llama3.2',
-        'llama3.1',
-        'stablelm2:12b',
+        'qwen2.5:1.5b',
+        'stablelm2:1.6b',
+        'llama3.2:3b',
+        'qwen2.5:3b',
         'llama2:7b',
-        'stablelm2',
-        'deepseek-r1:8b'
-    ][:1]
+        'deepseek-r1:8b',
+        'llama3.1:8b',
+        'stablelm2:12b',
+        'llama2:13b'
+    ]
 
     temperatures = [
         0.1,

@@ -110,19 +110,22 @@ def main(models):
     # create_venv(VENV_DIR)
     # install_requirements(VENV_DIR)
     # setup_ollama()
-    # download_models(models)
+    #download_models(models)
     # download_dataset()
     create_comments_parquet(CSV_PATH, PARQUET_PATH)
 
 if __name__ == '__main__':
-    models = [
+    models  = [
+        'qwen2.5:0.5b',
         'deepseek-r1:1.5b',
-        'stablelm2',
-        'llama3.1',
-        'llama3.2',
-        'deepseek-r1:8b',
-        'stablelm2:12b',
+        'qwen2.5:1.5b',
+        'stablelm2:1.6b',
+        'llama3.2:3b',
+        'qwen2.5:3b',
         'llama2:7b',
+        'deepseek-r1:8b',
+        'llama3.1:8b',
+        'stablelm2:12b',
         'llama2:13b'
     ]
     main(models)
