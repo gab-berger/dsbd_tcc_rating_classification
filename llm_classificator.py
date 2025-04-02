@@ -89,7 +89,15 @@ def llm_query(comment_row:pd.DataFrame, model:str, temperature:int = 0.3) -> lis
                 }
             )
         rating = Prediction.model_validate_json(response.message.content)
-        return [int(rating.rating), int(response.eval_duration+response.prompt_eval_duration), response]
+        extra_info = {
+            'message_content': str(response.message.content),
+            'total_duration': int(response.total_duration),
+            'load_duration': int(response.load_duration),
+            'prompt_eval_duration': int(response.prompt_eval_duration),
+            'eval_duration': int(response.eval_duration),
+            'eval_count': int(response.eval_count)
+        }
+        return [int(rating.rating), int(response.eval_duration+response.prompt_eval_duration), extra_info]
     
     except Exception as e:
         return None
@@ -99,16 +107,16 @@ def predict_rating(comment_row, model: str, temperature:float) -> dict:
     
     ratings = []
     prediction_times = []
-    responses = []
+    extra_infos = []
     count = 0
     tries = 0
     while count < prediction_repeat_target:
         tries += 1
-        rating, prediction_time, response = llm_query(comment_row, model, temperature)
+        rating, prediction_time, extra_info = llm_query(comment_row, model, temperature)
 
         ratings.append(rating)
         prediction_times.append(prediction_time)
-        responses.append(response)
+        extra_infos.append(extra_info)
 
         counts = Counter(ratings)
         most_common_rating, count = counts.most_common(1)[0]
@@ -126,7 +134,7 @@ def predict_rating(comment_row, model: str, temperature:float) -> dict:
         'repeat_target': prediction_repeat_target,
         'prediction_time': sum(prediction_times)/1e9,
         'ts_prediction': pd.Timestamp.now(),
-        'llm_outputs': responses
+        'extra_info': extra_info
     }
 
 def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> None:
