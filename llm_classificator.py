@@ -163,9 +163,10 @@ def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> 
                     try:
                         existing_predictions = pd.read_parquet(LLM_PREDICTIONS_PATH)
                         updated_predictions = pd.concat([existing_predictions, new_predictions_df], ignore_index=True)
-                        updated_predictions.to_parquet(LLM_PREDICTIONS_PATH)
                     except FileNotFoundError:
                         updated_predictions = new_predictions_df
+                    
+                    updated_predictions.to_parquet(LLM_PREDICTIONS_PATH)
                     predictions = []
 
                 pbar.set_postfix_str(
@@ -187,7 +188,7 @@ if __name__ == '__main__':
         'llama2:7b',
         'stablelm2',
         'deepseek-r1:8b'
-    ]
+    ][:1]
 
     temperatures = [
         0.1,
@@ -200,4 +201,4 @@ if __name__ == '__main__':
     
     for model in models:
         for temperature in temperatures:
-            main(eligible_comments_df.iloc[0:250], model, temperature)
+            main(eligible_comments_df.iloc[:300], model, temperature)
