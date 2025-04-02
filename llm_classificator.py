@@ -94,8 +94,8 @@ def llm_query(comment_row:pd.DataFrame, model:str, temperature:int = 0.3) -> lis
             'total_duration': int(response.total_duration),
             'load_duration': int(response.load_duration),
             'prompt_eval_duration': int(response.prompt_eval_duration),
-            'eval_duration': int(response.eval_duration),
-            'eval_count': int(response.eval_count)
+            'eval_count': int(response.eval_count),
+            'eval_duration': int(response.eval_duration)
         }
         return [int(rating.rating), int(response.eval_duration+response.prompt_eval_duration), extra_info]
     
