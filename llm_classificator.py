@@ -18,11 +18,10 @@ def select_eligible_comments() -> pd.DataFrame:
     
     return comments_df[comments_df['id'].isin(manual_predictions['id'])]
 
-def select_comments_to_predict(comments_df, llm_predictions, model, temperature) -> pd.DataFrame:
+def select_comments_to_predict(comments_df, llm_predictions, model) -> pd.DataFrame:
     if len(llm_predictions) > 0:
         processed_ids = llm_predictions[
-            (llm_predictions['model'] == model) & 
-            (llm_predictions['temperature'] == temperature)
+            (llm_predictions['model'] == model)
         ]['id']
         
         unprocessed_comments = comments_df[
@@ -33,7 +32,7 @@ def select_comments_to_predict(comments_df, llm_predictions, model, temperature)
 
     return unprocessed_comments
 
-def llm_query(comment_row:pd.DataFrame, model:str, temperature:int = 0.3) -> list[int,int]:
+def llm_rating_predict(comment_row:pd.DataFrame, model:str) -> list[int,int]:
     class Prediction(BaseModel):
         rating: int
 
@@ -83,61 +82,33 @@ def llm_query(comment_row:pd.DataFrame, model:str, temperature:int = 0.3) -> lis
                 ],
             format=Prediction.model_json_schema(),
             options={
-                'temperature': temperature,
+                'temperature': 0.1,
                 'seed': 42,
                 'num_predict': 10
                 }
             )
         rating = Prediction.model_validate_json(response.message.content)
-        extra_info = {
+        return {
+        'id': comment_row['id'],
+        'model': model,
+        'rating': int(rating.rating),
+        'prediction_time': int(response.eval_duration+response.prompt_eval_duration)/1e9,
+        'ts_prediction': pd.Timestamp.now(),
+        'extra_info': {
             'message_content': str(response.message.content),
             'total_duration': int(response.total_duration),
             'load_duration': int(response.load_duration),
             'prompt_eval_duration': int(response.prompt_eval_duration),
             'eval_count': int(response.eval_count),
-            'eval_duration': int(response.eval_duration)
+            'eval_duration': int(response.eval_duration),
+            'temperature': 0.1
         }
-        return [int(rating.rating), int(response.eval_duration+response.prompt_eval_duration), extra_info]
+    }
     
     except Exception as e:
         return None
 
-def predict_rating(comment_row, model: str, temperature:float) -> dict:
-    prediction_repeat_target = max(int(temperature*10),1)
-    
-    ratings = []
-    prediction_times = []
-    extra_infos = []
-    count = 0
-    tries = 0
-    while count < prediction_repeat_target:
-        tries += 1
-        rating, prediction_time, extra_info = llm_query(comment_row, model, temperature)
-
-        ratings.append(rating)
-        prediction_times.append(prediction_time)
-        extra_infos.append(extra_info)
-
-        counts = Counter(ratings)
-        most_common_rating, count = counts.most_common(1)[0]
-        
-        if count == prediction_repeat_target:
-            break
-    
-    return {
-        'id': comment_row['id'],
-        'model': model,
-        'temperature': temperature,
-        'rating': most_common_rating if ratings else None,
-        'all_predictions': ratings,
-        'tries': tries,
-        'repeat_target': prediction_repeat_target,
-        'prediction_time': sum(prediction_times)/1e9,
-        'ts_prediction': pd.Timestamp.now(),
-        'extra_info': extra_info
-    }
-
-def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> None:
+def main(eligible_comments_df: pd.DataFrame, model: str) -> None:
     LLM_PREDICTIONS_PATH = 'data/llm_predictions.parquet'
 
     try:
@@ -148,19 +119,17 @@ def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> 
     comments_to_predict = select_comments_to_predict(
         eligible_comments_df, 
         existing_predictions, 
-        model, 
-        temperature
+        model
     )
 
     batch_size = 5
     predictions = []
     
-    with tqdm(total=len(comments_to_predict), desc=f"{model}_t{temperature}") as pbar:
+    with tqdm(total=len(comments_to_predict), desc=f"{model}") as pbar:
         for idx, row in comments_to_predict.iterrows():
             try:
                 start_time = time.time()
-                
-                prediction = predict_rating(row, model, temperature)
+                prediction = llm_rating_predict(row, model)
                 prediction['processing_time'] = time.time() - start_time
                 
                 predictions.append(prediction)
@@ -178,8 +147,7 @@ def main(eligible_comments_df: pd.DataFrame, model: str, temperature: float) -> 
                     predictions = []
 
                 pbar.set_postfix_str(
-                    f"tries:{prediction['tries']}|"
-                    f"time:{prediction['prediction_time']:.1f}s"
+                    f"pred:{prediction['rating']}|"
                 )
 
             except Exception as e:
@@ -201,15 +169,7 @@ if __name__ == '__main__':
         'llama2:13b'
     ]
 
-    temperatures = [
-        0.1,
-        0.3,
-        0.5,
-        0.8
-    ]
-
     eligible_comments_df = select_eligible_comments()
     
     for model in models:
-        for temperature in temperatures:
-            main(eligible_comments_df.iloc[:300], model, temperature)
+        main(eligible_comments_df.iloc[:300], model)
