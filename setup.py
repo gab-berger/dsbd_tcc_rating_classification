@@ -68,11 +68,11 @@ def create_comments_parquet(csv_path, parquet_path):
         df = df[["rating", "pros", "cons"]]
         
         print("Verificando valores nulos...")
-        print(f"{df.isnull().sum()} valores nulos")
+        print(f"{df.isnull().sum()} - valores nulos")
         df = df.dropna()
 
         print("Verificando valores duplicados...")
-        print(df.duplicated().sum())
+        print(f"{df.duplicated().sum()} valores duplicados")
         df = df.drop_duplicates()
 
         print(f"Dados após a limpeza: {len(df)} linhas restantes.")
