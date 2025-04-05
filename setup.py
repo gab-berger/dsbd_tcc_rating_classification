@@ -111,7 +111,7 @@ def create_comments_parquet(csv_path, parquet_path):
             bins = [df[metric].min() - 1, quantiles[0.2], quantiles[0.4], quantiles[0.6], quantiles[0.8], df[metric].max() + 1]
             labels = [1, 2, 3, 4, 5]
 
-            df[f'{metric}_group'] = pd.cut(df[metric], bins=bins, labels=labels)
+            df[f'{metric}_group'] = pd.cut(df[metric], bins=bins, labels=labels).astype(int)
 
         print('Métricas criadas!')
         return df
