@@ -76,6 +76,8 @@ def create_comments_parquet(csv_path, parquet_path):
         df = df.drop_duplicates()
 
         print(f"Dados após a limpeza: {len(df)} linhas restantes.")
+        
+        df['rating'] = df['rating'].astype(int)
         return df
 
     def generate_unique_ids(df):
@@ -93,7 +95,7 @@ def create_comments_parquet(csv_path, parquet_path):
         else:
             raise ValueError("Conflitos de ID detectados!")
         
-        return df
+        return df[["id", "rating", "pros", "cons"]]
 
     def create_metrics(df):
         """Cria colunas de métricas para cada comentário"""
@@ -122,7 +124,7 @@ def create_comments_parquet(csv_path, parquet_path):
 def main(models):
     VENV_DIR = "venv"
     CSV_PATH = "data/all_reviews.csv"
-    PARQUET_PATH = "data/test_comments.parquet"
+    PARQUET_PATH = "data/comments.parquet"
 
     # create_venv(VENV_DIR)
     # install_requirements(VENV_DIR)
