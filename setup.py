@@ -34,10 +34,12 @@ def setup_ollama():
 
 def download_models(models):
     for model in models:
+        print(f'Pulling {model}...')
         ollama.pull(model)
         print(f'{model} good to go!')
 
 def download_dataset():
+    print('Downloading all_reviews.csv...')
     download_url = 'https://www.kaggle.com/api/v1/datasets/download/davidgauthier/glassdoor-job-reviews-2'
     commands = [
         ['curl','-L','-o','data/download.zip',download_url],
@@ -60,17 +62,20 @@ def create_comments_parquet(csv_path, parquet_path):
 
     def clean_data(df):
         """Remove valores nulos e duplicados."""
-        print("Verificando valores nulos...")
-        print(df.isnull().sum())
-        print("Verificando valores duplicados...")
-        print(df.duplicated().sum())
-        df = df.dropna()
-        df = df.drop_duplicates()
-        print(f"Dados após a limpeza: {len(df)} linhas restantes.")
         df['date'] = pd.to_datetime(df['date'])
         df = df.sort_values(by='date',ascending=False)
+        print(f"Dados ordenados pela data (mais recente a mais antigo).")
         df = df[["rating", "pros", "cons"]]
-        print(f"Dados ordenados pela data (mais recente a mais antigo). Coluna de data excluída.")
+        
+        print("Verificando valores nulos...")
+        print(f"{df.isnull().sum()} valores nulos")
+        df = df.dropna()
+
+        print("Verificando valores duplicados...")
+        print(df.duplicated().sum())
+        df = df.drop_duplicates()
+
+        print(f"Dados após a limpeza: {len(df)} linhas restantes.")
         return df
 
     def generate_unique_ids(df):
@@ -90,6 +95,17 @@ def create_comments_parquet(csv_path, parquet_path):
         
         return df
 
+    def create_metrics(df):
+        """Cria colunas de métricas para cada comentário"""
+        print('Criando métricas...')
+        df['pros_length'] = df['pros'].str.len()
+        df['cons_length'] = df['cons'].str.len()
+        df['comment_length'] = df['pros_length']+df['cons_length']
+        df['pros_length_proportion'] = ((df['pros_length'] / df['comment_length']) * 100).astype(int)
+        df = df.drop(columns=['pros_length','cons_length'])
+        print('Métricas criadas!')
+        return df
+
     def save_to_parquet(df, parquet_path):
         """Salva o DataFrame em um arquivo Parquet."""
         print(f"Salvando os dados no arquivo Parquet: {parquet_path}...")
@@ -99,6 +115,7 @@ def create_comments_parquet(csv_path, parquet_path):
     df = load_csv(csv_path)
     df = clean_data(df)
     df = generate_unique_ids(df)
+    df = create_metrics(df)
     save_to_parquet(df, parquet_path)
     print("Processo concluído!")
 
@@ -110,7 +127,7 @@ def main(models):
     # create_venv(VENV_DIR)
     # install_requirements(VENV_DIR)
     # setup_ollama()
-    #download_models(models)
+    # download_models(models)
     # download_dataset()
     create_comments_parquet(CSV_PATH, PARQUET_PATH)
 
