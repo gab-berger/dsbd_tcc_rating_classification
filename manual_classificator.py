@@ -48,6 +48,7 @@ def sort_top_score_comments(comments_df, existing_predictions):
     nas métricas 'rating', 'comment_length_group' e 'pros_length_proportion_group'.
     A hierarquia de importância é: rating > comment_length_group > pros_length_proportion_group.
     """
+    initial_cols = list(comments_df.columns)
     existing_predictions_metrics = existing_predictions.merge(
         comments_df[['id', 'comment_length_group', 'pros_length_proportion_group']],
         on='id',
@@ -93,7 +94,7 @@ def sort_top_score_comments(comments_df, existing_predictions):
     )
     
     top_score_comments = top_score_comments.sort_values(by='score', ascending=False)
-    return top_score_comments
+    return top_score_comments[initial_cols]
 
 def get_user_rating(comment):
     """
