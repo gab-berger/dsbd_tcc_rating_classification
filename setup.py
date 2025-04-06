@@ -85,7 +85,7 @@ def create_comments_parquet(csv_path, parquet_path):
         print("Gerando IDs únicos...")
         
         def generate_id(row):
-            unique_string = f"{row['rating']}_{row['pros']}_{row['cons']}"
+            unique_string = f"{float(row['rating'])}_{row['pros']}_{row['cons']}" # float conversion to preserve initial format
             return hashlib.sha256(unique_string.encode()).hexdigest()
         
         df["id"] = df.apply(generate_id, axis=1)
