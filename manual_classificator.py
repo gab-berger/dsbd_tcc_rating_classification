@@ -42,7 +42,7 @@ def select_eligible_comments(comments_df, existing_predictions):
     rated_ids = set(existing_predictions["id"])
     return comments_df[~comments_df["id"].isin(rated_ids)]
 
-def select_comment_to_predict(comments_df, eligible_comments, existing_predictions):
+def sort_top_score_comments(comments_df, existing_predictions):
     """
     Seleciona os 5 comentários elegíveis com maior score, priorizando grupos sub-representados
     nas métricas 'rating', 'comment_length_group' e 'pros_length_proportion_group'.
@@ -76,8 +76,8 @@ def select_comment_to_predict(comments_df, eligible_comments, existing_predictio
         df_metric[f'{col}_score'] = base_score * multiplier
         dfs[col] = df_metric
     
-    top_eligible_comments = eligible_comments.copy()
-    top_eligible_comments = top_eligible_comments.merge(
+    top_score_comments = comments_df.copy()
+    top_score_comments = top_score_comments.merge(
         dfs['rating'][['rating', 'rating_score']], on='rating', how='left'
     ).merge(
         dfs['comment_length_group'][['comment_length_group', 'comment_length_group_score']], on='comment_length_group', how='left'
@@ -86,15 +86,14 @@ def select_comment_to_predict(comments_df, eligible_comments, existing_predictio
         on='pros_length_proportion_group', how='left'
     )
     
-    top_eligible_comments['score'] = (
-        top_eligible_comments['rating_score'].fillna(0) +
-        top_eligible_comments['comment_length_group_score'].fillna(0) +
-        top_eligible_comments['pros_length_proportion_group_score'].fillna(0)
+    top_score_comments['score'] = (
+        top_score_comments['rating_score'].fillna(0) +
+        top_score_comments['comment_length_group_score'].fillna(0) +
+        top_score_comments['pros_length_proportion_group_score'].fillna(0)
     )
     
-    top_eligible_comments = top_eligible_comments.sort_values(by='score', ascending=False)
-    print(top_eligible_comments.iloc[:5])
-    return top_eligible_comments.iloc[0]
+    top_score_comments = top_score_comments.sort_values(by='score', ascending=False)
+    return top_score_comments
 
 def get_user_rating(comment):
     """
@@ -140,9 +139,10 @@ def save_updated_predictions(new_predictions, existing_predictions):
     updated_predictions.to_parquet(RATING_PRED_PATH, index=False)
     print(f"Avaliações salvas em {RATING_PRED_PATH}")
 
-def main(save_interval):
+def main(loop_interval):
     comments_df = load_comments(COMMENTS_PATH)
     existing_predictions = load_manual_predictions(RATING_PRED_PATH)
+    comments_df = sort_top_score_comments(comments_df, existing_predictions)
     
     new_predictions = []
     iteration = 0
@@ -155,11 +155,7 @@ def main(save_interval):
             print("Não há mais comentários para avaliar.")
             break
         
-        start_time = time.time()
-        comment = select_comment_to_predict(comments_df, eligible_comments, existing_predictions)
-        print(f"Comentários avaliados e selecionados em {time.time() - start_time:.2f}s")
-                
-        user_prediction = get_user_rating(comment)
+        user_prediction = get_user_rating(eligible_comments.iloc[0])
         
         if user_prediction is None:
             break
@@ -168,10 +164,13 @@ def main(save_interval):
         iteration += 1
         print("Avaliação registrada.")
         
-        if iteration % save_interval == 0:
+        if iteration % loop_interval == 0:
             if new_predictions:
                 save_updated_predictions(new_predictions, existing_predictions)
                 new_predictions = []
+            start_time = time.time()
+            comments_df = sort_top_score_comments(comments_df, existing_predictions)
+            print(f"Comentários avaliados e ordenados em {time.time() - start_time:.2f}s")
 
     if new_predictions:
         save_updated_predictions(new_predictions, existing_predictions)
@@ -179,5 +178,5 @@ def main(save_interval):
     print("Processo concluído!")
 
 if __name__ == "__main__":
-    SAVE_INTERVAL = 10
-    main(SAVE_INTERVAL)
+    LOOP_INTERVAL = 10
+    main(LOOP_INTERVAL)
