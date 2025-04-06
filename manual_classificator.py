@@ -5,11 +5,8 @@ import time
 
 warnings.filterwarnings("ignore")
 
-SAVE_INTERVAL = 10
-
-# Caminhos dos arquivos
-COMMENTS_PATH = "data/comments.parquet"               # Arquivo contendo os comentários
-RATING_PRED_PATH = "data/manual_predictions.parquet"     # Arquivo que armazenará as avaliações do usuário
+COMMENTS_PATH = "data/comments.parquet"
+RATING_PRED_PATH = "data/manual_predictions.parquet"
 
 def load_manual_predictions(path):
     """
@@ -99,13 +96,51 @@ def select_comment_to_predict(comments_df, eligible_comments, existing_predictio
     print(top_eligible_comments.iloc[:5])
     return top_eligible_comments.iloc[0]
 
+def get_user_rating(comment):
+    """
+    Exibe o comentário para avaliação e solicita ao usuário um rating (1 a 5) ou 'q' para sair.
+    Retorna um dicionário com os dados da previsão ou None se o usuário optar por sair.
+    """
+    print(f"""
+{'='*60}
+[Pros]: {comment['pros']}
+{'-'*30}
+[Cons]: {comment['cons']}
+{'='*60}
+Digite um número de 1 a 5 para avaliar este comentário ou 'q' para sair:
+""")
+    
+    start_time = pd.Timestamp.now()
+    user_input = input().strip()
+    prediction_time = (pd.Timestamp.now() - start_time).total_seconds()
+    
+    if user_input.lower() == 'q':
+        print("Encerrando a avaliação.")
+        return None
+    
+    try:
+        rating_prediction = int(user_input)
+        if rating_prediction < 1 or rating_prediction > 5:
+            print("Valor inválido! Por favor, digite um número entre 1 e 5.")
+            return get_user_rating(comment)
+    except ValueError:
+        print("Entrada inválida! Por favor, digite um número entre 1 e 5 ou 'q' para sair.")
+        return get_user_rating(comment)
+    
+    return {
+        "id": comment["id"],
+        "rating": rating_prediction,
+        "prediction_time": prediction_time,
+        "ts_prediction": pd.Timestamp.now()
+    }
+
 def save_updated_predictions(new_predictions, existing_predictions):
     new_predictions = pd.DataFrame(new_predictions)
     updated_predictions = pd.concat([existing_predictions, new_predictions], ignore_index=True)
     updated_predictions.to_parquet(RATING_PRED_PATH, index=False)
     print(f"Avaliações salvas em {RATING_PRED_PATH}")
 
-def main():
+def main(save_interval):
     comments_df = load_comments(COMMENTS_PATH)
     existing_predictions = load_manual_predictions(RATING_PRED_PATH)
     
@@ -122,42 +157,18 @@ def main():
         
         start_time = time.time()
         comment = select_comment_to_predict(comments_df, eligible_comments, existing_predictions)
-        print(time.time() - start_time)
+        print(f"Comentários avaliados e selecionados em {time.time() - start_time:.2f}s")
+                
+        user_prediction = get_user_rating(comment)
         
-        print("\n------------------------------")
-        print("Comentário para avaliação:")
-        print(f"Pros: {comment['pros']}")
-        print(f"Cons: {comment['cons']}")
-        print("------------------------------")
-        print("Digite um número de 1 a 5 para avaliar este comentário ou 'q' para sair:")
-        
-        start_time = pd.Timestamp.now()
-        user_input = input().strip()
-        prediction_time = (pd.Timestamp.now() - start_time).total_seconds()
-        
-        if user_input.lower() == 'q':
-            print("Encerrando a avaliação.")
+        if user_prediction is None:
             break
         
-        try:
-            rating_prediction = int(user_input)
-            if rating_prediction < 1 or rating_prediction > 5:
-                print("Valor inválido! Por favor, digite um número entre 1 e 5.")
-                continue
-        except ValueError:
-            print("Entrada inválida! Por favor, digite um número entre 1 e 5 ou 'q' para sair.")
-            continue
-        
-        new_predictions.append({
-            "id": comment["id"],
-            "rating": rating_prediction,
-            "prediction_time": prediction_time,
-            "ts_prediction": pd.Timestamp.now()
-        })
+        new_predictions.append(user_prediction)
         iteration += 1
         print("Avaliação registrada.")
         
-        if iteration % SAVE_INTERVAL == 0:
+        if iteration % save_interval == 0:
             if new_predictions:
                 save_updated_predictions(new_predictions, existing_predictions)
                 new_predictions = []
@@ -168,4 +179,5 @@ def main():
     print("Processo concluído!")
 
 if __name__ == "__main__":
-    main()
+    SAVE_INTERVAL = 10
+    main(SAVE_INTERVAL)
