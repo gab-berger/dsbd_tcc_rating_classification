@@ -108,7 +108,7 @@ def llm_rating_predict(comment_row:pd.DataFrame, model:str) -> list[int,int]:
     except Exception as e:
         return None
 
-def main(eligible_comments_df: pd.DataFrame, model: str) -> None:
+def main(eligible_comments: pd.DataFrame, model: str) -> None:
     LLM_PREDICTIONS_PATH = 'data/llm_predictions.parquet'
 
     try:
@@ -117,7 +117,7 @@ def main(eligible_comments_df: pd.DataFrame, model: str) -> None:
         existing_predictions = pd.DataFrame()
 
     comments_to_predict = select_comments_to_predict(
-        eligible_comments_df, 
+        eligible_comments, 
         existing_predictions, 
         model
     )
@@ -136,18 +136,18 @@ def main(eligible_comments_df: pd.DataFrame, model: str) -> None:
                 pbar.update(1)
 
                 if (idx + 1) % batch_size == 0 or (idx + 1) == len(comments_to_predict):
-                    new_predictions_df = pd.DataFrame(predictions)
+                    new_predictions = pd.DataFrame(predictions)
                     try:
                         existing_predictions = pd.read_parquet(LLM_PREDICTIONS_PATH)
-                        updated_predictions = pd.concat([existing_predictions, new_predictions_df], ignore_index=True)
+                        updated_predictions = pd.concat([existing_predictions, new_predictions], ignore_index=True)
                     except FileNotFoundError:
-                        updated_predictions = new_predictions_df
+                        updated_predictions = new_predictions
                     
                     updated_predictions.to_parquet(LLM_PREDICTIONS_PATH)
                     predictions = []
 
                 pbar.set_postfix_str(
-                    f"pred:{prediction['rating']}|"
+                    f"pred:{prediction['rating']}"
                 )
 
             except Exception as e:
@@ -169,7 +169,11 @@ if __name__ == '__main__':
         'llama2:13b'
     ]
 
-    eligible_comments_df = select_eligible_comments()
+    eligible_comments = pd.read_parquet('data/comments.parquet')# select_eligible_comments()
+    eligible_comments = eligible_comments.sample(frac=1).reset_index(drop=True)
     
-    for model in models:
-        main(eligible_comments_df.iloc[:300], model)
+    for model in models[:1]:
+        main(
+            eligible_comments,#.iloc[:300],
+            model
+            )
