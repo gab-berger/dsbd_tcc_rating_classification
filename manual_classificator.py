@@ -42,15 +42,30 @@ def select_eligible_comments(comments_df, existing_predictions):
     rated_ids = set(existing_predictions["id"])
     return comments_df[~comments_df["id"].isin(rated_ids)]
 
-def sort_top_score_comments(comments_df, existing_predictions):
+def select_llm_inconsistent_ids(comments_df, model='qwen2.5:0.5b', llm_predictions_path='data/llm_predictions.parquet'):
+    df = pd.read_parquet(llm_predictions_path,columns=['id', 'rating','model'])
+    df = df[df['model'] == model].drop(columns='model')
+    df = df.merge(
+        comments_df[['id', 'rating']].rename(columns={'rating':'real_rating'}),
+        on='id',
+        how='inner'
+    )
+    df['is_inconsistent'] = (
+                (df['rating'] - df['real_rating'] > 1) |
+                (df['rating'] - df['real_rating'] < -1)
+                )
+    df = df[df['is_inconsistent'] == True]
+    return set(df['id'])
+
+def sort_top_score_comments(comments_df, existing_predictions, llm_inconsistent_ids_filter=True):
     """
     Seleciona os 5 comentários elegíveis com maior score, priorizando grupos sub-representados
     nas métricas 'rating', 'comment_length_group' e 'pros_length_proportion_group'.
     A hierarquia de importância é: rating > comment_length_group > pros_length_proportion_group.
     """
     initial_cols = list(comments_df.columns)
-    existing_predictions_metrics = existing_predictions.merge(
-        comments_df[['id', 'comment_length_group', 'pros_length_proportion_group']],
+    existing_predictions_metrics = existing_predictions.drop(columns='rating').merge(
+        comments_df[['id', 'rating', 'comment_length_group', 'pros_length_proportion_group']],
         on='id',
         how='inner'
     )
@@ -78,6 +93,9 @@ def sort_top_score_comments(comments_df, existing_predictions):
         dfs[col] = df_metric
     
     top_score_comments = comments_df.copy()
+    if llm_inconsistent_ids_filter:
+        top_score_comments = top_score_comments[top_score_comments['id'].isin(select_llm_inconsistent_ids(comments_df))]
+
     top_score_comments = top_score_comments.merge(
         dfs['rating'][['rating', 'rating_score']], on='rating', how='left'
     ).merge(
@@ -92,7 +110,7 @@ def sort_top_score_comments(comments_df, existing_predictions):
         top_score_comments['comment_length_group_score'].fillna(0) +
         top_score_comments['pros_length_proportion_group_score'].fillna(0)
     )
-    
+       
     top_score_comments = top_score_comments.sort_values(by='score', ascending=False)
     return top_score_comments[initial_cols]
 
