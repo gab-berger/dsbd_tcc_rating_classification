@@ -120,7 +120,6 @@ def get_user_rating(comment):
     Retorna um dicionário com os dados da previsão ou None se o usuário optar por sair.
     """
     print(f"""
-{'='*60}
 [Pros]: {comment['pros']}
 {'-'*30}
 [Cons]: {comment['cons']}
@@ -174,6 +173,7 @@ def main(loop_interval):
             print("Não há mais comentários para avaliar.")
             break
         
+        print(f"{'='*27}[{iteration+1}/{loop_interval}]{'='*27}")
         user_prediction = get_user_rating(eligible_comments.iloc[0])
         
         if user_prediction is None:
