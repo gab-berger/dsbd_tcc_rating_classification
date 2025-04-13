@@ -10,3 +10,4 @@ _*
 venv/
 v1_comment_summarizer/
 data/
+!data/manual_predictions.parquet.txt
