@@ -119,10 +119,11 @@ def get_user_rating(comment):
     Exibe o comentário para avaliação e solicita ao usuário um rating (1 a 5) ou 'q' para sair.
     Retorna um dicionário com os dados da previsão ou None se o usuário optar por sair.
     """
-    print(f"""
-[Pros]: {comment['pros']}
-{'-'*30}
-[Cons]: {comment['cons']}
+    print(f"""[Pros]:
+{comment['pros']}
+{'-'*45}
+[Cons]:
+{comment['cons']}
 {'='*60}
 Digite um número de 1 a 5 para avaliar este comentário ou 'q' para sair:
 """)
