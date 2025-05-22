@@ -1,6 +1,6 @@
 *.csv
 *.db
-*.parquet
+*.parquet*
 *.zip
 *.txt
 !requirements.txt
