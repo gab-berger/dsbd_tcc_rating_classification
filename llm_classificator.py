@@ -66,7 +66,7 @@ def llm_rating_predict(comment_row:pd.DataFrame, model:str) -> list[int,int]:
     [pros]: {pros}
     [cons]: {cons}
     """
-  
+    TEMPERATURE = 0.1
     try:
         response: ChatResponse = chat(
             model=model,
@@ -82,7 +82,7 @@ def llm_rating_predict(comment_row:pd.DataFrame, model:str) -> list[int,int]:
                 ],
             format=Prediction.model_json_schema(),
             options={
-                'temperature': 0.1,
+                'temperature': TEMPERATURE,
                 'seed': 42,
                 'num_predict': 10
                 }
@@ -101,7 +101,7 @@ def llm_rating_predict(comment_row:pd.DataFrame, model:str) -> list[int,int]:
             'prompt_eval_duration': int(response.prompt_eval_duration),
             'eval_count': int(response.eval_count),
             'eval_duration': int(response.eval_duration),
-            'temperature': 0.1
+            'temperature': TEMPERATURE
         }
     }
     
@@ -169,11 +169,10 @@ if __name__ == '__main__':
         'llama2:13b'
     ]
 
-    eligible_comments = pd.read_parquet('data/comments.parquet')# select_eligible_comments()
-    eligible_comments = eligible_comments.sample(frac=1).reset_index(drop=True)
+    eligible_comments = select_eligible_comments()
     
-    for model in models[:1]:
+    for model in models:
         main(
-            eligible_comments,#.iloc[:300],
+            eligible_comments,
             model
             )
