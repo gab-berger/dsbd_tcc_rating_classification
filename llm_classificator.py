@@ -108,6 +108,30 @@ def llm_rating_predict(comment_row:pd.DataFrame, model:str) -> list[int,int]:
     except Exception as e:
         return None
 
+def safe_save_to_parquet(df: pd.DataFrame, path: str) -> None:
+    """
+    Safely write DataFrame `df` to Parquet at `path` with minimal dependencies:
+    1. Rename existing file to a backup (.bak) if present
+    2. Write new DataFrame to a temporary file (.tmp)
+    3. Read back and verify row count matches
+    4. Atomically replace original with the temp file
+    """
+    
+    if os.path.exists(path):
+        bak_path = f"{path}.bak"
+        os.replace(path, bak_path)
+
+    tmp_path = f"{path}.tmp"
+    df.to_parquet(tmp_path)
+
+    df_check = pd.read_parquet(tmp_path)
+    if len(df_check) != len(df):
+        raise ValueError(
+            f"Integrity check failed: read {len(df_check)} rows vs {len(df)} expected"
+        )
+
+    os.replace(tmp_path, path)
+
 def main(eligible_comments: pd.DataFrame, model: str) -> None:
     LLM_PREDICTIONS_PATH = 'data/llm_predictions.parquet'
 
@@ -143,7 +167,7 @@ def main(eligible_comments: pd.DataFrame, model: str) -> None:
                     except FileNotFoundError:
                         updated_predictions = new_predictions
                     
-                    updated_predictions.to_parquet(LLM_PREDICTIONS_PATH)
+                    safe_save_to_parquet(updated_predictions, LLM_PREDICTIONS_PATH)
                     predictions = []
 
                 pbar.set_postfix_str(
