@@ -191,10 +191,15 @@ if __name__ == '__main__':
         'llama2:13b'
     ]
 
-    eligible_comments = select_eligible_comments()
+    # eligible_comments = select_eligible_comments()
+    # for model in models:
+    #     main(
+    #         eligible_comments,
+    #         model
+    #         )
     
-    for model in models:
-        main(
-            eligible_comments,
-            model
-            )
+    comments = pd.read_parquet('data/comments.parquet').sample(frac=1).reset_index(drop=True)
+    main(
+        comments,
+        models[0]
+        )
