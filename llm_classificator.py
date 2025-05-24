@@ -198,8 +198,7 @@ if __name__ == '__main__':
     #         model
     #         )
     
-    comments = pd.read_parquet('data/comments.parquet').sample(frac=1).reset_index(drop=True)
     main(
-        comments,
-        models[0]
+        pd.read_parquet('data/comments.parquet').sample(frac=1).reset_index(drop=True),
+        'qwen2.5:0.5b'
         )
