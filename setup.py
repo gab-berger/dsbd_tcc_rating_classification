@@ -137,22 +137,30 @@ def main(models):
     # create_venv(VENV_DIR)
     # install_requirements(VENV_DIR)
     # setup_ollama()
-    # download_models(models)
+    download_models(models)
     # download_dataset()
-    create_comments_parquet(CSV_PATH, PARQUET_PATH)
+    # create_comments_parquet(CSV_PATH, PARQUET_PATH)
 
 if __name__ == '__main__':
     models  = [
         'qwen2.5:0.5b',
+        'qwen3:0.6b',
+        'gemma3:1b',
         'deepseek-r1:1.5b',
         'qwen2.5:1.5b',
         'stablelm2:1.6b',
+        'qwen3:1.7b',
         'llama3.2:3b',
         'qwen2.5:3b',
+        'gemma3:4b',
+        'phi3:3.8b',
+        'qwen3:4b',
         'llama2:7b',
         'deepseek-r1:8b',
         'llama3.1:8b',
+        'qwen3:8b',
         'stablelm2:12b',
+        'gemma3:12b',
         'llama2:13b'
     ]
     main(models)
