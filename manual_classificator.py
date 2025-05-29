@@ -152,10 +152,34 @@ Digite um número de 1 a 5 para avaliar este comentário ou 'q' para sair:
         "ts_prediction": pd.Timestamp.now()
     }
 
+def safe_save_to_parquet(df: pd.DataFrame, path: str) -> None:
+    """
+    Safely write DataFrame `df` to Parquet at `path` with minimal dependencies:
+    1. Rename existing file to a backup (.bak) if present
+    2. Write new DataFrame to a temporary file (.tmp)
+    3. Read back and verify row count matches
+    4. Atomically replace original with the temp file
+    """
+    
+    if os.path.exists(path):
+        bak_path = f"{path}.bak"
+        os.replace(path, bak_path)
+
+    tmp_path = f"{path}.tmp"
+    df.to_parquet(tmp_path)
+
+    df_check = pd.read_parquet(tmp_path)
+    if len(df_check) != len(df):
+        raise ValueError(
+            f"Integrity check failed: read {len(df_check)} rows vs {len(df)} expected"
+        )
+
+    os.replace(tmp_path, path)
+
 def save_updated_predictions(new_predictions, existing_predictions):
     new_predictions = pd.DataFrame(new_predictions)
     updated_predictions = pd.concat([existing_predictions, new_predictions], ignore_index=True)
-    updated_predictions.to_parquet(RATING_PRED_PATH, index=False)
+    safe_save_to_parquet(updated_predictions, RATING_PRED_PATH)
     print(f"Avaliações salvas em {RATING_PRED_PATH}")
 
 def main(loop_interval):
