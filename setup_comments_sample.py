@@ -93,9 +93,6 @@ def create_sample_df(df_en, df_pt, existing_predictions_path):
     SAMPLE_SIZE = 500
     ratings = list(range(1, 6))
     lengths = list(range(1, 6))
-
-    if df_en is None or df_pt is None:
-        raise TypeError("df_en and df_pt must be DataFrames, got None")
     
     existing_ids = pd.read_parquet(existing_predictions_path, columns=['id'])['id'].tolist()
     samples = []
