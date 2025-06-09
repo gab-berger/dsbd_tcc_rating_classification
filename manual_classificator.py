@@ -5,7 +5,7 @@ import time
 
 warnings.filterwarnings("ignore")
 
-COMMENTS_PATH = "data/comments.parquet"
+COMMENTS_PATH = "data/comments_sample.parquet"
 RATING_PRED_PATH = "data/manual_predictions.parquet"
 
 def load_manual_predictions(path):
@@ -32,87 +32,19 @@ def load_comments(path):
     else:
         raise FileNotFoundError(f"Arquivo {path} não encontrado. Crie-o antes de continuar.")
 
-def select_eligible_comments(comments_df, existing_predictions):
-    """
-    Filtra os comentários que ainda não foram avaliados, ou seja,
-    que não possuem seu 'id' presente na coluna 'id' do existing_predictions.
-    """
-    if existing_predictions.empty:
-        return comments_df
-    rated_ids = set(existing_predictions["id"])
-    return comments_df[~comments_df["id"].isin(rated_ids)]
+def get_comments_to_predict(comments_df, existing_predictions_df):
+    existing_ids = existing_predictions_df['id'].tolist()
+    comments_df = comments_df[~comments_df['id'].isin(existing_ids)]
+    return comments_df
 
-def select_llm_inconsistent_ids(comments_df, model='qwen2.5:0.5b', llm_predictions_path='data/llm_predictions.parquet'):
-    df = pd.read_parquet(llm_predictions_path,columns=['id', 'rating','model'])
-    df = df[df['model'] == model].drop(columns='model')
-    df = df.merge(
-        comments_df[['id', 'rating']].rename(columns={'rating':'real_rating'}),
-        on='id',
-        how='inner'
-    )
-    df['is_inconsistent'] = (
-                (df['rating'] - df['real_rating'] > 1) |
-                (df['rating'] - df['real_rating'] < -1)
-                )
-    df = df[df['is_inconsistent'] == True]
-    return set(df['id'])
-
-def sort_top_score_comments(comments_df, existing_predictions, llm_inconsistent_ids_filter=True):
-    """
-    Seleciona os 5 comentários elegíveis com maior score, priorizando grupos sub-representados
-    nas métricas 'rating', 'comment_length_group' e 'pros_length_proportion_group'.
-    A hierarquia de importância é: rating > comment_length_group > pros_length_proportion_group.
-    """
-    initial_cols = list(comments_df.columns)
-    existing_predictions_metrics = existing_predictions.drop(columns='rating').merge(
-        comments_df[['id', 'rating', 'comment_length_group', 'pros_length_proportion_group']],
-        on='id',
-        how='inner'
-    )
-    metrics = ['rating', 'comment_length_group', 'pros_length_proportion_group']
-    
-    dfs = {
-    col: (
-        existing_predictions_metrics[col]
-        .value_counts()
-        .rename('count')
-        .sort_values(ascending=True)
-        .reset_index()
-        .rename(columns={'index': col})
-    )
-    for col in metrics
-    }
-
-    for col in metrics:
-        df_metric = dfs[col]
-        df_metric['ranking'] = df_metric['count'].rank(method='min', ascending=True).astype(int)
-        max_rank = df_metric['ranking'].max()
-        base_score = (max_rank - df_metric['ranking'] + 1).astype(int)
-        multiplier = 100 if col == 'rating' else 10 if col == 'comment_length_group' else 1
-        df_metric[f'{col}_score'] = base_score * multiplier
-        dfs[col] = df_metric
-    
-    top_score_comments = comments_df.copy()
-    if llm_inconsistent_ids_filter:
-        top_score_comments = top_score_comments[top_score_comments['id'].isin(select_llm_inconsistent_ids(comments_df))]
-
-    top_score_comments = top_score_comments.merge(
-        dfs['rating'][['rating', 'rating_score']], on='rating', how='left'
-    ).merge(
-        dfs['comment_length_group'][['comment_length_group', 'comment_length_group_score']], on='comment_length_group', how='left'
-    ).merge(
-        dfs['pros_length_proportion_group'][['pros_length_proportion_group', 'pros_length_proportion_group_score']],
-        on='pros_length_proportion_group', how='left'
-    )
-    
-    top_score_comments['score'] = (
-        top_score_comments['rating_score'].fillna(0) +
-        top_score_comments['comment_length_group_score'].fillna(0) +
-        top_score_comments['pros_length_proportion_group_score'].fillna(0)
-    )
-       
-    top_score_comments = top_score_comments.sort_values(by='score', ascending=False)
-    return top_score_comments[initial_cols]
+def choose_language():
+    while True:
+        choice = input("Deseja avaliar comentários em (1) inglês ou (2) português? Responda utilizando o número respectivo. ").strip()
+        if choice == '1':
+            return 'en'
+        if choice == '2':
+            return 'pt'
+        print("Opção inválida. Digite 1 para inglês ou 2 para português.")
 
 def get_user_rating(comment):
     """
@@ -176,23 +108,27 @@ def safe_save_to_parquet(df: pd.DataFrame, path: str) -> None:
 
     os.replace(tmp_path, path)
 
-def save_updated_predictions(new_predictions, existing_predictions):
-    new_predictions = pd.DataFrame(new_predictions)
-    updated_predictions = pd.concat([existing_predictions, new_predictions], ignore_index=True)
-    safe_save_to_parquet(updated_predictions, RATING_PRED_PATH)
+def save_updated_predictions(new_predictions, existing_predictions_df):
+    new_predictions_df = pd.DataFrame(new_predictions)
+    updated_predictions_df = pd.concat([existing_predictions_df, new_predictions_df], ignore_index=True)
+    safe_save_to_parquet(updated_predictions_df, RATING_PRED_PATH)
     print(f"Avaliações salvas em {RATING_PRED_PATH}")
 
 def main(loop_interval):
     comments_df = load_comments(COMMENTS_PATH)
-    existing_predictions = load_manual_predictions(RATING_PRED_PATH)
-    comments_df = sort_top_score_comments(comments_df, existing_predictions)
     
-    new_predictions = []
+    language = choose_language()
+    comments_df = comments_df[comments_df['language']==language]
+
+    existing_predictions_df = load_manual_predictions(RATING_PRED_PATH)
+    comments_df = get_comments_to_predict(comments_df, existing_predictions_df)
+    
+    new_predictions_list = []
     iteration = 0
 
     while True:
-        updated_predictions = pd.concat([existing_predictions, pd.DataFrame(new_predictions)], ignore_index=True)
-        eligible_comments = select_eligible_comments(comments_df, updated_predictions)
+        updated_predictions = pd.concat([existing_predictions_df, pd.DataFrame(new_predictions_list)], ignore_index=True)
+        eligible_comments = get_comments_to_predict(comments_df, updated_predictions)
         
         if eligible_comments.empty:
             print("Não há mais comentários para avaliar.")
@@ -204,20 +140,20 @@ def main(loop_interval):
         if user_prediction is None:
             break
         
-        new_predictions.append(user_prediction)
+        new_predictions_list.append(user_prediction)
         iteration += 1
         print("Avaliação registrada.")
         
         if iteration % loop_interval == 0:
-            if new_predictions:
-                save_updated_predictions(new_predictions, existing_predictions)
-                new_predictions = []
+            if new_predictions_list:
+                save_updated_predictions(new_predictions_list, existing_predictions_df)
+                new_predictions_list = []
             start_time = time.time()
-            comments_df = sort_top_score_comments(comments_df, existing_predictions)
+            comments_df = get_comments_to_predict(comments_df, existing_predictions_df)
             print(f"Comentários avaliados e ordenados em {time.time() - start_time:.2f}s")
 
-    if new_predictions:
-        save_updated_predictions(new_predictions, existing_predictions)
+    if new_predictions_list:
+        save_updated_predictions(new_predictions_list, existing_predictions_df)
     
     print("Processo concluído!")
 
