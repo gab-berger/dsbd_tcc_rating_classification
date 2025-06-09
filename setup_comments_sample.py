@@ -66,7 +66,7 @@ def create_comments_df(csv_path):
         else:
             raise ValueError("Conflitos de ID detectados!")
         
-        return df[["id", "rating", "pros", "cons"]]
+        return df[["id", "rating", "pros", "cons", "language"]]
 
     def create_metrics(df):
         """Cria colunas de métricas para cada comentário"""
