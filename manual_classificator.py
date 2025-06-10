@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import warnings
-import time
 
 warnings.filterwarnings("ignore")
 
@@ -33,8 +32,9 @@ def load_comments(path):
         raise FileNotFoundError(f"Arquivo {path} não encontrado. Crie-o antes de continuar.")
 
 def get_comments_to_predict(comments_df, existing_predictions_df):
-    existing_ids = existing_predictions_df['id'].tolist()
-    comments_df = comments_df[~comments_df['id'].isin(existing_ids)]
+    if 'id' in existing_predictions_df.columns:
+        existing_ids = existing_predictions_df['id'].tolist()
+        comments_df = comments_df[~comments_df['id'].isin(existing_ids)]
     return comments_df
 
 def choose_language():
@@ -108,16 +108,15 @@ def safe_save_to_parquet(df: pd.DataFrame, path: str) -> None:
 
     os.replace(tmp_path, path)
 
-def save_updated_predictions(new_predictions, existing_predictions_df):
+def save_predictions(new_predictions, existing_predictions_df):
     new_predictions_df = pd.DataFrame(new_predictions)
     updated_predictions_df = pd.concat([existing_predictions_df, new_predictions_df], ignore_index=True)
     safe_save_to_parquet(updated_predictions_df, RATING_PRED_PATH)
-    print(f"Avaliações salvas em {RATING_PRED_PATH}")
 
-def main(loop_interval):
-    comments_df = load_comments(COMMENTS_PATH)
-    
+def main():
     language = choose_language()
+
+    comments_df = load_comments(COMMENTS_PATH)
     comments_df = comments_df[comments_df['language']==language]
 
     existing_predictions_df = load_manual_predictions(RATING_PRED_PATH)
@@ -127,15 +126,17 @@ def main(loop_interval):
     iteration = 0
 
     while True:
-        updated_predictions = pd.concat([existing_predictions_df, pd.DataFrame(new_predictions_list)], ignore_index=True)
-        eligible_comments = get_comments_to_predict(comments_df, updated_predictions)
+        comments_df = get_comments_to_predict(
+            comments_df,
+            pd.DataFrame(new_predictions_list)
+            )
         
-        if eligible_comments.empty:
+        if comments_df.empty:
             print("Não há mais comentários para avaliar.")
             break
         
-        print(f"{'='*27}[{iteration+1}/{loop_interval}]{'='*27}")
-        user_prediction = get_user_rating(eligible_comments.iloc[0])
+        print(f"{'='*27}[{iteration+1}/{len(comments_df)}]{'='*27}")
+        user_prediction = get_user_rating(comments_df.iloc[0])
         
         if user_prediction is None:
             break
@@ -144,19 +145,13 @@ def main(loop_interval):
         iteration += 1
         print("Avaliação registrada.")
         
-        if iteration % loop_interval == 0:
-            if new_predictions_list:
-                save_updated_predictions(new_predictions_list, existing_predictions_df)
-                new_predictions_list = []
-            start_time = time.time()
-            comments_df = get_comments_to_predict(comments_df, existing_predictions_df)
-            print(f"Comentários avaliados e ordenados em {time.time() - start_time:.2f}s")
+        if new_predictions_list:
+            save_predictions(new_predictions_list, existing_predictions_df)
 
     if new_predictions_list:
-        save_updated_predictions(new_predictions_list, existing_predictions_df)
+        save_predictions(new_predictions_list, existing_predictions_df)
     
-    print("Processo concluído!")
+    print("DONE!")
 
 if __name__ == "__main__":
-    LOOP_INTERVAL = 10
-    main(LOOP_INTERVAL)
+    main()
