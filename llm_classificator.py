@@ -8,13 +8,10 @@ from tqdm import tqdm
 import warnings
 warnings.filterwarnings("ignore")
 
-def select_eligible_comments() -> pd.DataFrame:
-    comments_df = pd.read_parquet('data/comments.parquet')
-    print(f"Comments loaded! ({len(comments_df)} total)")
-    manual_predictions = pd.read_parquet('data/manual_predictions.parquet')
-    print(f"Manual predictions loaded! ({len(manual_predictions)} total)")
-    
-    return comments_df[comments_df['id'].isin(manual_predictions['id'])]
+def load_comments() -> pd.DataFrame:
+    comments_df = pd.read_parquet('data/comments_sample.parquet')
+    print(f"Comments loaded! ({len(comments_df)} total)")    
+    return comments_df
 
 def select_comments_to_predict(comments_df, llm_predictions, model) -> pd.DataFrame:
     if len(llm_predictions) > 0:
@@ -104,7 +101,14 @@ def llm_rating_predict(comment_row:pd.DataFrame, model:str) -> list[int,int]:
     }
     
     except Exception as e:
-        return None
+        return {
+        'id': comment_row['id'],
+        'model': model,
+        'rating': None,
+        'prediction_time': None,
+        'ts_prediction': pd.Timestamp.now(),
+        'extra_info': None
+    }
 
 def safe_save_to_parquet(df: pd.DataFrame, path: str) -> None:
     """
@@ -135,8 +139,11 @@ def main(eligible_comments: pd.DataFrame, model: str) -> None:
 
     try:
         existing_predictions = pd.read_parquet(LLM_PREDICTIONS_PATH)
-    except FileNotFoundError:
-        existing_predictions = pd.DataFrame()
+    except FileNotFoundError:    
+        try:
+            existing_predictions = pd.read_parquet(LLM_PREDICTIONS_PATH+'.bak')
+        except FileNotFoundError:
+            existing_predictions = pd.DataFrame()
 
     comments_to_predict = select_comments_to_predict(
         eligible_comments, 
@@ -196,17 +203,12 @@ if __name__ == '__main__':
         'qwen3:8b',
         'stablelm2:12b',
         'gemma3:12b',
-        'llama2:13b'
+        # 'llama2:13b'
     ]
 
-    eligible_comments = select_eligible_comments()
+    eligible_comments = load_comments()
     for model in models:
         main(
             eligible_comments,
             model
             )
-    
-    # main(
-    #     pd.read_parquet('data/comments.parquet').sample(frac=1).reset_index(drop=True),
-    #     'qwen2.5:0.5b'
-    #     )
