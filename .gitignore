@@ -4,7 +4,6 @@
 *.zip
 *.txt
 !requirements.txt
-*.png
 *.tgz
 *.json
 _*
