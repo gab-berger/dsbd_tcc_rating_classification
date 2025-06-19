@@ -9,5 +9,5 @@
 _*
 venv/
 v1_comment_summarizer/
-!data/manual_predictions.parquet
+!data/analytic_df.parquet
 data/backup
