@@ -11,12 +11,15 @@ def gen_analytic_df():
         ).rename(
             columns={'rating':'model_rating'}
         )
+    df_llm = df_llm[df_llm['model_rating'] >= 1].dropna()
+
     df_manual = pd.read_parquet(
         df_manual_path,
         columns=['id','rating']
         ).rename(
             columns={'rating':'manual_rating'}
         )
+    
     df_comments = pd.read_parquet(
         df_comments_path,
         columns=['id','rating','language']
