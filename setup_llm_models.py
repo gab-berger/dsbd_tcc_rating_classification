@@ -39,11 +39,7 @@ def download_models(models):
         print(f'{model} good to go!')
 
 def main(models):
-    VENV_DIR = "venv"
-    CSV_PATH = "data/all_reviews.csv"
-    PARQUET_PATH = "data/comments.parquet"
-
-    # create_venv(VENV_DIR)
+    # create_venv("venv")
     # install_requirements(VENV_DIR)
     # setup_ollama()
     download_models(models)
@@ -56,43 +52,42 @@ if __name__ == '__main__':
         'qwen2.5:3b',
         'qwen3:0.6b',
         'qwen3:1.7b',
-        'qwen3:14b',
         'qwen3:4b',
         'qwen3:8b',
+        'qwen3:14b',
 
-        # Gemma Family (7 models)
+        # Gemma Family (5 models)
         'gemma:2b',
         'gemma:7b',
         'gemma3:1b',
-        'gemma3:12b',
         'gemma3:4b',
-        'gemma3n:e2b',
-        'gemma3n:e4b',
+        'gemma3:12b',
 
         # DeepSeek Family (5 models)
         'deepseek-r1:1.5b',
-        'deepseek-r1:14b',
         'deepseek-r1:7b',
         'deepseek-r1:7b',
         'deepseek-r1:8b',
+        'deepseek-r1:14b',
 
         # Orca Family (5 models)
-        'orca-mini:13b',
         'orca-mini:3b',
         'orca-mini:7b',
-        'orca2:13b',
+        'orca-mini:13b',
         'orca2:7b',
+        'orca2:13b',
 
         # Llama Family (4 models)
-        'llama2:13b',
         'llama2:7b',
+        'llama2:13b',
+        'llama3:8b',
         'llama3.1:8b',
         'llama3.2:3b',
 
         # Cogito Family (3 models)
-        'cogito:14b',
         'cogito:3b',
         'cogito:8b',
+        'cogito:14b',
 
         # Phi Family (3 models)
         'phi3:3.8b',
@@ -108,16 +103,16 @@ if __name__ == '__main__':
         'yi:9b',
 
         # Olmo Family (2 models)
-        'olmo2:13b',
         'olmo2:7b',
+        'olmo2:13b',
 
         # Exaone Family (2 models)
         'exaone-deep:2.4b',
         'exaone-deep:7.8b',
 
         # Mistral Family (2 models)
-        'mistral-nemo:12b',
         'mistral-openorca:7b',
+        'mistral-nemo:12b',
 
         # EverythingLM Family (1 model)
         'everythinglm:13b',
