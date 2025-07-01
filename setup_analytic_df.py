@@ -11,7 +11,7 @@ def gen_analytic_df():
         ).rename(
             columns={'rating':'model_rating'}
         )
-    df_llm = df_llm[df_llm['model_rating'] >= 1].dropna()
+    df_llm = df_llm[df_llm['model_rating'] >= 1].dropna(subset='model_rating')
 
     df_manual = pd.read_parquet(
         df_manual_path,
@@ -33,6 +33,8 @@ def gen_analytic_df():
         .merge(df_comments, on='id', how='inner')
         )
 
+    df['model_rating'] = df['model_rating'].astype(int)
+
     for type in ['manual','model']:
         df[f'is_inconsistent_{type}'] = (
             (df[f'{type}_rating'] - df['real_rating']).abs() > 1
@@ -45,5 +47,5 @@ if __name__ == '__main__':
     PATH = 'data/analytic_df.parquet'
     
     df = gen_analytic_df()
-    df.to_parquet(PATH)
+    df.to_parquet(PATH)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
     print(f"Saved df to '{PATH}'")
